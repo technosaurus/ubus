@@ -83,7 +83,7 @@ int main(int argc, char ** argv){
                 }
             }else{
                 fcntl(client, F_SETFL, fcntl(client, F_GETFL) | O_NONBLOCK);
-                fd_add(client);
+                client_add(client);
             }
         }
         //send from stdin to all listeners
@@ -102,7 +102,7 @@ int main(int argc, char ** argv){
             client * c = clients;
             while(c){
                 if (send(c->fd, &buff, e, 0) < 0) {
-                    fd_del(c->fd);
+                    client_del(c->fd);
                 }
                 c=c->next;
             }

@@ -91,7 +91,7 @@ int main(int argc, char ** argv){
                 }
             }else{
                 fcntl(client, F_SETFL, fcntl(client, F_GETFL) | O_NONBLOCK);
-                fd_add(client);
+                client_add(client);
             }
         }
         //read clients
@@ -105,21 +105,40 @@ int main(int argc, char ** argv){
                     exit(1);
                 }
                 else if(n==0){
-                    fd_del(c->fd);
+                    if(c->buff){
+                        int offset=0;
+                        char * ob= (char*)malloc(c->bufflen);
+
+                        while(offset<c->bufflen){
+                            putchar('"');
+                            int s=ubus_next_arg(c->buff, ob,c->bufflen,&offset);
+                            int i=0;
+                            for(;i<s;i++){
+                                if(ob[i]=='"'){
+                                    putchar('\\');
+                                }
+                                putchar(ob[i]);
+                            }
+                            putchar('"');
+                            putchar(' ');
+                        }
+                        putchar('\n');
+
+                        fflush(0);
+                    }
+                    /* this is a script client.
+                       we have no return value for you */
+                    close(c->fd);
+                    client_del(c->fd);
                 }else{
                     buff[n]=0;
-                    printf((const char *)&buff);
-                    fflush(0);
-
-                    int i;
-                    for(i=0;i<n;i++){
-                        if(buff[i]=='\n'){
-                            /* this is a script client.
-                               we have no return value for you */
-                            close(c->fd);
-                            fd_del(c->fd);
-                        }
+                    if(c->buff==0){
+                        c->buff=malloc(n);
+                    }else{
+                        c->buff=realloc(c->buff,c->bufflen+n);
                     }
+                    memcpy(c->buff+c->bufflen,&buff,n);
+                    c->bufflen+=n;
                 }
             }
             c=c->next;

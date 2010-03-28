@@ -8,10 +8,13 @@
 
 int mkpath(const char *s, mode_t mode);
 int mksocket(const char *s);
-
+char * ubus_escaped_arg(const char * a, int len, int * outlen);
+int ubus_next_arg(const char * in,  char * out, int size, int * offset);
 
 // list of connected clients
 struct  client_list_el{
+    char * buff;
+    int bufflen;
     int fd;
     struct client_list_el * next;
 };
@@ -19,9 +22,11 @@ struct  client_list_el{
 typedef struct client_list_el client;
 client * clients;
 
-void fd_add(int fd){
+void client_add(int fd){
     client * c=(client *)malloc(sizeof(client));
     c->fd=fd;
+    c->buff=0;
+    c->bufflen=0;
     c->next=NULL;
     if(clients==NULL){
         clients=c;
@@ -38,7 +43,7 @@ void fd_add(int fd){
     fprintf(stderr,"corrupted linked list");
     abort();
 }
-void fd_del(int fd){
+void client_del(int fd){
     client * prev=NULL;
     client * cur=clients;
     while(cur){
@@ -48,7 +53,9 @@ void fd_del(int fd){
             }else{
                 clients=cur->next;
             }
-            free(prev);
+            if(cur->buff)
+                free(cur->buff);
+            free(cur);
             return;
         }
         prev=cur;
