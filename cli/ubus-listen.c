@@ -53,6 +53,7 @@ int main(int argc, char ** argv){
         if ((t=recv(s, str, 100, 0)) > 0) {
             str[t] = '\0';
             printf(str);
+            fflush(0);
             if(t && str[t-1]=='\n' && (once==1)){
                 break;
             }
