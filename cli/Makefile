@@ -1,9 +1,7 @@
-objects = ubus-listen ubus-call ubus-signal ubus-method
-
-all: $(objects)
-
+ubus: ubus.c
+	$(CC) -g $(CFLAGS)  $< -o $@
 clean: 
-	rm -f $(objects) common.o
+	rm -f ubus
+install: ubus
+	cp ubus /usr/bin/
 
-$(objects): %: %.c common.h common.o
-	$(CC) -g $(CFLAGS) common.o $< -o $@
