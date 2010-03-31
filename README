@@ -1,19 +1,1 @@
-Usage:
 
-  Create a signal
-
-  $> ubus signal /var/ipc/user/name/application/signalname
-
-  Listen to a signal
-
-  $> ubus listen /var/ipc/user/name/application/signalname
-  
-
-  Create a method
-
-  $> ubus method /var/ipc/user/name/application/methodname
-
-  Call a method
-
-  $> ubus call /var/ipc/user/name/application/methodname hello world
-  
