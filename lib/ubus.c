@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "ubus.h"
+#include "util.c"
 
 struct ubus_service_e{
     int fd;
@@ -20,6 +21,9 @@ typedef struct ubus_service_e ubus_service;
 
 ubus_t * ubus_create (const char * uri){
     ubus_service * service=(ubus_service*)malloc(sizeof(ubus_service));
+    if(mksocketpath(uri)<0){
+        return 0;
+    }
     if ((service->fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         return 0;
     }

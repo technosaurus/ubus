@@ -7,7 +7,7 @@
 #include <libgen.h>
 
 
-int mkpath(const char *s, mode_t mode){
+static int mkpath(const char *s, mode_t mode){
     char *q, *r = NULL, *path = NULL, *up = NULL;
     int rv;
 
@@ -43,33 +43,10 @@ int mkpath(const char *s, mode_t mode){
     return (rv);
 }
 
-int mksocket(const char *s){
-    mkpath(dirname((char*)s),S_IRWXU|S_IRWXG);
-}
-
-
-int ubus_next_arg(const char * in,  char * out, int size, int * offset){
-
-    char esc=0;
-    int rp=0;
-    while(*offset < size){
-        char c=in[(*offset)++];
-        if (c=='\n' || c=='\t'){
-            return rp;
-        } else if(esc==1){
-            if(c=='\\'){
-                out[rp++]='\\';
-            }else  if(c=='n'){
-                out[rp++]='\n';
-            }else  if(c=='t'){
-                out[rp++]='\t';
-            }
-            esc=0;
-        }else if(c=='\\'){
-            esc=1;
-        }else{
-            out[rp++]=c;
-        }
-    }
-    return rp;
+static int mksocketpath(const char *s){
+    char * tmp=malloc(strlen(s));
+    strcpy(tmp,s);
+    int r=mkpath(dirname(tmp),S_IRWXU|S_IRWXG);
+    free(tmp);
+    return r;
 }

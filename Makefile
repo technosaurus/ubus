@@ -3,10 +3,10 @@ ubus: .obj/ubus.o libubus.a
 .obj/ubus.o: .obj cli/ubus.c
 	$(CC) -I./lib/ $(CFLAGS) -c cli/ubus.c -o $@
 
-libubus.a: .obj/libubus.o
+libubus.a: .obj/libubus.o 
 	$(AR) rcs libubus.a .obj/libubus.o
 
-.obj/libubus.o: .obj lib/ubus.c lib/ubus.h
+.obj/libubus.o: .obj lib/ubus.c lib/ubus.h lib/util.c
 	$(CC) $(CFLAGS) -c lib/ubus.c -o .obj/libubus.o
 
 .obj:
