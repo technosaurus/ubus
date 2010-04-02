@@ -202,7 +202,7 @@ int main(int argc, char ** argv){
         exit (EXIT_FAILURE);
     }
 
-    if(mode=!MODE_CONNECT){
+    if(mode!=MODE_CONNECT){
         //---------------server mode---------------------------------
         ubus_t * s=ubus_create(filename);
         if(s==0){
