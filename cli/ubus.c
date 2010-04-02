@@ -29,17 +29,19 @@ struct  ubus_client_list_el{
     int handler_in;
     int handler_out;
     struct ubus_client_list_el * next;
+    struct ubus_client_list_el * prev;
 };
 typedef struct ubus_client_list_el ubus_client;
 ubus_client * clients;
 
-ubus_client * ubus_client_add(ubus_chan_t * chan){
+static ubus_client * ubus_client_add(ubus_chan_t * chan){
     ubus_client * c=(ubus_client *)malloc(sizeof(ubus_client));
     c->chan=chan;
     c->handler=0;
     c->handler_in=0;
     c->handler_out=0;
     c->next=NULL;
+    c->prev=NULL;
     if(clients==NULL){
         clients=c;
         return c;
@@ -48,6 +50,7 @@ ubus_client * ubus_client_add(ubus_chan_t * chan){
     while(cur){
         if(cur->next==NULL){
             cur->next=c;
+            c->prev=cur;
             return c;
         }
         cur=cur->next;
@@ -55,33 +58,29 @@ ubus_client * ubus_client_add(ubus_chan_t * chan){
     fprintf(stderr,"corrupted linked list");
     abort();
 }
-void ubus_client_del(ubus_chan_t * chan){
-    ubus_client * prev=NULL;
-    ubus_client * cur=clients;
-    while(cur){
-        if(cur->chan==chan){
-            if(prev){
-                prev->next=cur->next;
-            }else{
-                clients=cur->next;
-            }
-            if(cur->handler != 0){
-                close(cur->handler_in);
-                close(cur->handler_out);
-                kill(cur->handler,SIGTERM);
-            }
-            ubus_disconnect(cur->chan);
-            free(cur);
-            return;
+static ubus_client *  ubus_client_del(ubus_client * c){
+    ubus_client * n= NULL;
+    if(c->prev==NULL){
+        if(c!=clients){
+            fprintf(stderr,"corrupted linked list");
+            abort;
         }
-        prev=cur;
-        cur=cur->next;
+        clients=0;
+    }else{
+        ubus_client * n= c->next;
+        c->prev->next=c->next;
     }
-    fprintf(stderr,"corrupted linked list");
-    abort();
+    if(c->handler != 0){
+        close(c->handler_in);
+        close(c->handler_out);
+        kill(c->handler,SIGTERM);
+    }
+    ubus_disconnect(c->chan);
+    free(c);
+    return n;
 }
 
-int ubus_fork_handler(char ** args,int * in,int * out){
+static int ubus_fork_handler(char ** args,int * in,int * out){
     int r=0;
     int pipe_in[2];
     int pipe_out[2];
@@ -101,7 +100,6 @@ int ubus_fork_handler(char ** args,int * in,int * out){
     }
     if(r==0){
         //i'm the child. wee
-
         close (pipe_in[1]);
         dup2 (pipe_in[0], 0);
         close (pipe_in[0]);
@@ -123,20 +121,17 @@ int ubus_fork_handler(char ** args,int * in,int * out){
     return r;
 }
 
-void ubus_broadcast(const void * buff,int size) {
+static void ubus_broadcast(const void * buff,int size) {
     ubus_client * c2=clients;
     while(c2){
         if (ubus_write(c2->chan,buff,size)<1){
             perror("send");
-            ubus_chan_t * ff=c2->chan;
-            c2=c2->next;
-            ubus_client_del(ff);
+            c2=ubus_client_del(c2);
             continue;
         }
         c2=c2->next;
     }
 }
-
 
 //---------------main---------------------------------
 
@@ -207,7 +202,7 @@ int main(int argc, char ** argv){
         exit (EXIT_FAILURE);
     }
 
-    if(mode==MODE_TERMINAL || mode==MODE_TAP  || mode==MODE_POOL){
+    if(mode=!MODE_CONNECT){
         //---------------server mode---------------------------------
         ubus_t * s=ubus_create(filename);
         if(s==0){
@@ -219,48 +214,45 @@ int main(int argc, char ** argv){
             si_handler=ubus_fork_handler(handler,&si_handler_in,&si_handler_out);
         }
 
-
         //linked list with connected clients
         clients=NULL;
-
-        //We'll handle that as return of read()
-        //        signal (SIGPIPE,SIG_IGN);
 
         fd_set rfds;
         for(;;) {
             FD_ZERO (&rfds);
 
+            //select service
             int server=ubus_fd(s);
             FD_SET  (server, &rfds);
             int maxfd=server;
 
+            //select stdin
             if(handler==0){
                 fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
                 FD_SET  (0, &rfds);
             }
 
+            //select si_handler
             if(si_handler!=0){
                 FD_SET  (si_handler_out, &rfds);
-                if(si_handler_out>maxfd){
-                    maxfd=si_handler_out;
-                }
+                if(si_handler_out>maxfd) maxfd=si_handler_out;
             }
 
+            //select clients
             ubus_client* c=clients;
             while(c){
                 int fd=ubus_chan_fd(c->chan);
                 FD_SET  (fd, &rfds);
-                if(fd>maxfd){
-                    maxfd=fd;
-                }
+                if(fd>maxfd) maxfd=fd;
+                //select on client handler
                 if(c->handler!=0){
                     FD_SET  (c->handler_out, &rfds);
-                    if(c->handler_out>maxfd){
-                        maxfd=c->handler_out;
-                    }
+                    if(c->handler_out>maxfd) maxfd=c->handler_out;
                 }
                 c=c->next;
             }
+
+            //run select
             if (select(maxfd+2, &rfds, NULL, NULL, NULL) < 0){
                 perror("select");
                 exit(1);
@@ -292,11 +284,11 @@ int main(int argc, char ** argv){
                 }
             }
 
-
             //read clients
             c=clients;
             while(c){
                 if(c->handler!=0){
+                    //read client handler
                     if(FD_ISSET(c->handler_out, &rfds)){
                         char buff [100];
                         int n=read(c->handler_out,&buff,100);
@@ -304,9 +296,7 @@ int main(int argc, char ** argv){
                             if(n<0){
                                 perror("handler");
                             }
-                            ubus_chan_t * ff=c->chan;
-                            c=c->next;
-                            ubus_client_del(ff);
+                            c=ubus_client_del(c);
                             continue;
                         }
                         ubus_write(c->chan,&buff,n);
@@ -322,9 +312,7 @@ int main(int argc, char ** argv){
                         continue;
                     }
                     else if (n<1){
-                        ubus_chan_t * ff=c->chan;
-                        c=c->next;
-                        ubus_client_del(ff);
+                        c=ubus_client_del(c);
                         continue;
                     }
 
@@ -348,31 +336,22 @@ int main(int argc, char ** argv){
             if(handler==0){
                 if(FD_ISSET(0, &rfds)){
                     char buff [1000];
-                    int n=read(0,&buff,1000);
+                    int n=read(fileno(stdin),&buff,1000);
                     if(n<0){
                         perror("read");
-                        continue;
-                    }
-                    if(n==0){
+                        exit(errno);
+                    } else if(n==0){
                         //FIXME: do i have to flush the other fds?
                         exit(0);
                     }
-                    ubus_client* c = clients;
-                    while(c){
-                        if (ubus_write(c->chan,&buff,n) < 0) {
-                            ubus_chan_t * ff=c->chan;
-                            c=c->next;
-                            ubus_client_del(ff);
-                        }
-                        c=c->next;
-                    }
+                    ubus_broadcast(&buff,n);
                     if(mode==MODE_POOL){
-                        write(1,&buff,n);
+                        write(fileno(stdout),&buff,n);
                     }
                 }
             }
 
-        }
+        }//end main loop
         ubus_destroy(s);
     }else{
         //---------------client mode---------------------------------
