@@ -18,9 +18,6 @@ struct ubus_service_e{
 
 typedef struct ubus_service_e ubus_service;
 
-void ubus_init(){
-    signal (SIGPIPE,SIG_IGN);//FIXME: do in app? or at lease local and restore previous handler
-}
 ubus_t * ubus_create (const char * uri){
     ubus_service * service=(ubus_service*)malloc(sizeof(ubus_service));
     if ((service->fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {

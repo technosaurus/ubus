@@ -207,10 +207,6 @@ int main(int argc, char ** argv){
         exit (EXIT_FAILURE);
     }
 
-
-    ubus_init();
-
-
     if(mode==MODE_TERMINAL || mode==MODE_TAP  || mode==MODE_POOL){
         //---------------server mode---------------------------------
         ubus_t * s=ubus_create(filename);
@@ -218,7 +214,6 @@ int main(int argc, char ** argv){
             perror("ubus_create");
             exit(0);
         }
-
 
         if (mode==MODE_TAP && handler!=0){
             si_handler=ubus_fork_handler(handler,&si_handler_in,&si_handler_out);
@@ -229,7 +224,7 @@ int main(int argc, char ** argv){
         clients=NULL;
 
         //We'll handle that as return of read()
-        signal (SIGPIPE,SIG_IGN);
+        //        signal (SIGPIPE,SIG_IGN);
 
         fd_set rfds;
         for(;;) {
@@ -400,7 +395,6 @@ int main(int argc, char ** argv){
                 perror("select");
                 exit(1);
             }
-
 
             if(FD_ISSET(s, &rfds)){
                 char buff [1000];
