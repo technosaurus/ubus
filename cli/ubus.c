@@ -305,27 +305,29 @@ int main(int argc, char ** argv){
                 int fd=ubus_chan_fd(c->chan);
                 if(FD_ISSET(fd, &rfds)){
                     char buff [100];
-                    int n=ubus_read(c->chan,&buff,100);
-                    if(n==0 && c->handler!=0 ){
-                        close(c->handler_in);
-                        c=c->next;
-                        continue;
-                    }
-                    else if (n<1){
-                        c=ubus_client_del(c);
-                        continue;
-                    }
-
-                    if(si_handler!=0){
-                        write(si_handler_in,&buff,n);
-                    } else if (c->handler!=0) {
-                        write(c->handler_in,&buff,n);
-                    }else{
-                        write(1,&buff,n);
-                        if (mode==MODE_POOL){
-                            c=c->next; //could get deleted
-                            ubus_broadcast(&buff,n);
+                    if(ubus_activate(c->chan)==UBUS_READY){
+                        int n=ubus_read(c->chan,&buff,100);
+                        if(n==0 && c->handler!=0 ){
+                            close(c->handler_in);
+                            c=c->next;
                             continue;
+                        }
+                        else if (n<1){
+                            c=ubus_client_del(c);
+                            continue;
+                        }
+
+                        if(si_handler!=0){
+                            write(si_handler_in,&buff,n);
+                        } else if (c->handler!=0) {
+                            write(c->handler_in,&buff,n);
+                        }else{
+                            write(1,&buff,n);
+                            if (mode==MODE_POOL){
+                                c=c->next; //could get deleted
+                                ubus_broadcast(&buff,n);
+                                continue;
+                            }
                         }
                     }
                 }
@@ -356,18 +358,20 @@ int main(int argc, char ** argv){
     }else{
         //---------------client mode---------------------------------
         ubus_chan_t * chan=ubus_connect(filename);
-        if(chan==0){
+        if(ubus_activate(chan)==UBUS_ERROR){
             perror("ubus_connect");
             exit(errno);
         }
+        fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
 
         for(;;) {
             fd_set rfds;
             FD_ZERO (&rfds);
-            fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
-            FD_SET  (0, &rfds);
+
+            if(ubus_status(chan)==UBUS_CONNECTED){
+                FD_SET  (0, &rfds);
+            }
             int s=ubus_chan_fd(chan);
-            fcntl(s, F_SETFL, fcntl(s, F_GETFL) | O_NONBLOCK);
             FD_SET  (s, &rfds);
 
             if (select(s+2, &rfds, NULL, NULL, NULL) < 0){
@@ -376,19 +380,25 @@ int main(int argc, char ** argv){
             }
 
             if(FD_ISSET(s, &rfds)){
-                char buff [1000];
-                int n=ubus_read(chan,&buff,1000);
-                if(n<1){
-                    exit (0);
+                UBUS_STATUS st=ubus_activate(chan);
+                if(st==UBUS_READY){
+                    char buff [1000];
+                    int n=ubus_read(chan,&buff,1000);
+                    if(n<1){
+                        exit (0);
+                    }
+                    write(1,&buff,n);
+                }else if (st==UBUS_ERROR){
+                    perror("ubus_activate");
+                    exit(errno);
                 }
-                write(1,&buff,n);
             }
 
             if(FD_ISSET(0, &rfds)){
                 char buff [100];
                 int n=read(0,&buff,100);
                 if(n==0){
-                    ubus_disconnect(chan);
+                    ubus_close(chan);
                     continue;
                 }
                 else if(n<1){
