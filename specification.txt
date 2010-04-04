@@ -28,13 +28,14 @@ UBUS SPECIFICATION 1.0
   for incoming requests, and destroy the bus when they see fit.
   Applications MUST delete the bus on exit, even when exiting
   due to a signal.
+  The on disk layout of buses shall reflect the logical object
+  layout of the application.
 
 4. Connections
 
   A connection is a bidirectional pipe established with a bus.
   An application may establish a connection with a bus, by 
-  simply connecting to the file via connect (3) 
-
+  simply connecting to the file via connect (3).
 
 5. Conventions
 
@@ -61,3 +62,22 @@ UBUS SPECIFICATION 1.0
         to a command are seperated by tab.
 
 
+6. Ubus shell util
+
+   the shell command "ubus" can be used to work with ubuses from
+   shell.
+
+   6.1 terminal
+
+       A terminal is a bus where each connection is wired to a new
+       instance of another application.
+
+   6.2 tap
+
+       A terminal is a bus where each connection is wired to 
+       the same instance of an application, or to stdin/stdout.
+
+   6.3 pool
+
+       A pool is a bus where each connection is wired to all other 
+       connections.
