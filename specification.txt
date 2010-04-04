@@ -38,8 +38,8 @@ UBUS SPECIFICATION 1.0
    An application may establish a connection with a bus, by 
    simply connecting to the file via connect (3).
 
-5. RMI
-   Ubus can be used as Remote Method Invocation protocol. 
+5. RMI format
+   Ubus can be used for Remote Method Invocation. 
 
    A call consists of multiple utf8 strings seperated 
    by tab (ascii 9) and terminated by newline (ascii 10).
@@ -61,8 +61,9 @@ UBUS SPECIFICATION 1.0
    Connections receiving an error message, MUST be closed
    and MUST NOT be used anymore.
 
-   If the format differs, the bus MUST have a file ending
-   embedding a format hint, such as "~/.ipc/lpr/print.ps
+   If the format is not one of the below, the bus should 
+   have a file ending embedding a format hint, 
+   such as "~/.ipc/cups/printers/brother/print.rest.ps
    Multiple format hints can be concatenated.
 
    6.1  Signals
@@ -95,11 +96,14 @@ UBUS SPECIFICATION 1.0
         A client first sends a request,  then closes the write 
         channel. The service sends a response, and closes the
         read channel. Both request and response may be empty.
+        Error handling should be implemented at application
+        level.
+
         Rest buses shall carry the file ending ".rest". 
         
-        The data is not encoded. If it is not utf8 plain
-        text, a format hint is required, the hint is 
-        appended. eg:  "set_picture.rest.png"
+        The data is not encoded and can be arbitary. 
+        If it is not utf8 plain text, a format hint is required, 
+        the hint is appended. eg:  "set_picture.rest.png"
 
 6. Bus discovery
 
