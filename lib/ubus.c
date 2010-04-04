@@ -141,13 +141,25 @@ UBUS_STATUS  ubus_activate   (ubus_chan_t * s){
                 close(chan->inotify);
                 chan->inotify=0;
             }else{
-                chan->status=UBUS_LURKING;
+                /*
+                  FIXME
+                  (file create && listen) is not atomic
+                  avoid dead lock for now by waiting.
+                  this should be solved with flock
+                */
+                usleep(100);
+                if(do_connect(chan)==0){
+                    close(chan->inotify);
+                    chan->inotify=0;
+                }else{
+                    chan->status=UBUS_LURKING;
+                }
             }
-
         }
     } else if(chan->status==UBUS_CONNECTED){
         return UBUS_READY;
     }
+    fprintf(stderr,"s_%i\n",chan->status);
     return chan->status;
 }
 int  ubus_write  (ubus_chan_t * s, const void * buff, int len){
