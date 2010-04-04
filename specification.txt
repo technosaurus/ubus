@@ -1,0 +1,63 @@
+UBUS SPECIFICATION 1.0
+
+1. Motivation
+
+  System V IPC mechanisms offer no utils for situations
+  where multiple processes shall be connected.
+  Typical applications are system/session daemons which 
+  can be accessed by multiple other processes.
+  Those applications either have to provide their own
+  mechanism, or use dbus.
+  Ubus provides such functionality without the need for 
+  a system daemon.
+
+2. Bus
+
+  A bus is a unix domain socket (AF_UNIX and SOCK_STREAM)
+  located in:
+          /var/ipc/application_name/
+  or
+          ~/.ipc/application_name/
+
+  depending on, if the owner is a system or session service.
+
+3. Services
+
+  Services are applications providing one or multiple buses.
+  They create the socket in the appropriate directory, listen
+  for incoming requests, and destroy the bus when they see fit.
+  Applications MUST delete the bus on exit, even when exiting
+  due to a signal.
+
+4. Connections
+
+  A connection is a bidirectional pipe established with a bus.
+  An application may establish a connection with a bus, by 
+  simply connecting to the file via connect (3) 
+
+
+5. Conventions
+
+   5.1  Format
+        Ubus specifies no format. All connections are streams,
+        and as such, any data format may be used.
+        However, as a convention, all communication is line
+        based.  Each command is terminated with a newline,
+        and responses shall follow synchronously.
+
+            Client: echo "switch 2" | ubus ~/.ipc/wm/desktop
+            Server: ok\n
+
+        If the format differs, the bus MUST have a file ending
+        embedding a format hint, such as "~/.ipc/lpr/print.ps
+
+   5.1  Signals
+        A signal is a bus, where each connection receives data
+        when a specific event in the service happened.
+
+   5.1  Methods
+        A connection on a method bus, first sends a command, 
+        then receives a response. In line format, arguments
+        to a command are seperated by tab.
+
+
