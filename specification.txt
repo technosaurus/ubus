@@ -9,7 +9,7 @@ UBUS SPECIFICATION 1.0
   Those applications either have to provide their own
   mechanism, or use dbus.
   Ubus provides such functionality without the need for 
-  a system daemon.
+  a system daemon. Its implementation is meant to be simple.
 
 2. Bus
 
@@ -29,55 +29,83 @@ UBUS SPECIFICATION 1.0
   Applications MUST delete the bus on exit, even when exiting
   due to a signal.
   The on disk layout of buses shall reflect the logical object
-  layout of the application.
+  layout of the application. The applications ipc directory
+  may contain sub-directories.
 
 4. Connections
 
-  A connection is a bidirectional pipe established with a bus.
-  An application may establish a connection with a bus, by 
-  simply connecting to the file via connect (3).
+   A connection is a bidirectional pipe established with a bus.
+   An application may establish a connection with a bus, by 
+   simply connecting to the file via connect (3).
 
-5. Conventions
+5. RMI
+   Ubus can be used as Remote Method Invocation protocol. 
 
-   5.1  Format
-        Ubus specifies no format. All connections are streams,
-        and as such, any data format may be used.
-        However, as a convention, all communication is line
-        based.  Each command is terminated with a newline,
-        and responses shall follow synchronously.
+   A call consists of multiple utf8 strings seperated 
+   by tab (ascii 9) and terminated by newline (ascii 10).
+   A call may contain zero arguments.
 
-            Client: echo "switch 2" | ubus ~/.ipc/wm/desktop
-            Server: ok\n
+   Control characters in arguments are encoded:
+   0 (null) -->   \0  ( 92 followed by 96 )
+   7 (bell) -->  \a  (  92 followed by 97 )
+   8 (backspace) --> \b
+   9 (tab) --> \t
+   10 (newline) --> \n
+   12 (formfeed) --> \f
+   13 (return)  --> \r
+   27 (escape)  --> \e
+   \ is encoded as \\
 
-        If the format differs, the bus MUST have a file ending
-        embedding a format hint, such as "~/.ipc/lpr/print.ps
+   Errors can be indicated by sending a bell (ascii 7)
+   then an error message then newline (10).
+   Connections receiving an error message, MUST be closed
+   and MUST NOT be used anymore.
 
-   5.1  Signals
-        A signal is a bus, where each connection receives data
-        when a specific event in the service happened.
+   If the format differs, the bus MUST have a file ending
+   embedding a format hint, such as "~/.ipc/lpr/print.ps
+   Multiple format hints can be concatenated.
 
-   5.1  Methods
-        A connection on a method bus, first sends a command, 
-        then receives a response. In line format, arguments
-        to a command are seperated by tab.
+   6.1  Signals
+        A signal is a bus, where each connection receives 
+        a call when a specific event in the service happened.
+        Data sent towards the service is ignored. 
+
+        Signals shall carry the file ending ".signal".
+
+   5.3  Methods
+        On a method connection, a call is sent to the
+        service, then the service responds with the 
+        return value. Each request MUST be followed by a 
+        response, in the same order they were sent.
+
+        Methods shall carry the file ending ".method".
 
 
-6. Ubus shell util
+   5.4  Properties
+        Upon connection, the service immediately sends the 
+        current value to the client. A client may then send 
+        a new value. If the new value is accepted, it is 
+        again written to all connections. If it is rejected
+        an error (bell) MAY BE sent and the connection is 
+        terminated.
 
-   the shell command "ubus" can be used to work with ubuses from
-   shell.
+        Properties shall carry the file ending ".property". 
 
-   6.1 terminal
+   5.5  Restful methods
+        A client first sends a request,  then closes the write 
+        channel. The service sends a response, and closes the
+        read channel. Both request and response may be empty.
+        Rest buses shall carry the file ending ".rest". 
+        
+        The data is not encoded. If it is not utf8 plain
+        text, a format hint is required, the hint is 
+        appended. eg:  "set_picture.rest.png"
 
-       A terminal is a bus where each connection is wired to a new
-       instance of another application.
+6. Bus discovery
 
-   6.2 tap
-
-       A terminal is a bus where each connection is wired to 
-       the same instance of an application, or to stdin/stdout.
-
-   6.3 pool
-
-       A pool is a bus where each connection is wired to all other 
-       connections.
+    Applications may establish connections to services that 
+    are not started yet. Implementations should use inotify
+    or other available utils to monitor the path for creation
+    of the file.
+    If a socket is a zombie, implementations should attemp to
+    reconnect when the file is recreated.
