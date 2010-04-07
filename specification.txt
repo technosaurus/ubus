@@ -45,52 +45,9 @@ UBUS SPECIFICATION DRAFT
    An application may establish a connection with a bus, by 
    simply connecting to the file via connect (3).
 
-5. RMI
+5. Communication types
 
-   Ubus can be used for Remote Method Invocation. 
-
-   5.1 Format
-
-      A call consists of multiple arguments seperated 
-      by tab (ascii 9) and terminated by newline (ascii 10).
-
-      A call contains zero or more arguments.
-      Implementations MUST at least support a call size
-      (until \n) of 1024Bytes. They SHOULD support
-      unlimited size. Exceeding the implementation
-      limit SHOULD result in an immediate disconnect.
-
-      An argument is a utf8 string.
-      Control characters in arguments are encoded:
-      0 (null) -->   \0  ( 92 followed by 96 )
-      7 (bell) -->  \a  (  92 followed by 97 )
-      8 (backspace) --> \b
-      9 (tab) --> \t
-      10 (newline) --> \n
-      12 (formfeed) --> \f
-      13 (return)  --> \r
-      27 (escape)  --> \e
-      \ is encoded as \\
-
-      Any line beginning with an unencoded control character,
-      other then tab (ascii 9), is not data, and MUST be 
-      handled separately.
-
-      Errors can be indicated by sending a bell (ascii 7)
-      then an error number, then optionally tab followed by
-      a message, then newline.
-      The error number SHOULD be a posix errno. If it is not,
-      it MUST NOT clash with a posix errno.
-
-      Other control characters are reserved for future use.
-      Lines beginning with such a character, MUST be ignored.
-   
-      If the format is not RMI, the bus MUST have a file 
-      ending embedding a format hint. Multiple format hints 
-      can be concatenated.        
-
-
-   5.2  Signals
+   5.1  Signals
 
       A signal is a bus, where each connection receives 
       a call when a specific event in the service happened.
@@ -99,7 +56,7 @@ UBUS SPECIFICATION DRAFT
 
       Signals carry the file ending ".signal".
 
-   5.3  Methods
+   5.2  Methods
 
       On a method connection, a call is sent to the
       service, then the service responds with the 
@@ -108,7 +65,7 @@ UBUS SPECIFICATION DRAFT
 
       Methods carry the file ending ".method".
 
-   5.4  Properties
+   5.3  Properties
 
       Upon connection, the service immediately sends the 
       current value to the client. A client may then send 
@@ -118,23 +75,79 @@ UBUS SPECIFICATION DRAFT
       terminated.
 
       Properties carry the file ending ".property". 
-      
 
-6.  Restful bus
+
+    5.4  Restful bus
         
-   A client first sends a request,  then closes the write 
-   channel. The service sends a response, and closes the
-   read channel. Both request and response may be empty.
-   Error handling must be implemented at application
-   level.
+      A client first sends a request,  then closes the write 
+      channel. The service sends a response, and closes the
+      read channel. Both request and response may be empty.
+      Error handling must be implemented at application
+      level.
 
-   Rest buses carry the file ending ".rest". 
- 
-   The data is not encoded and can be arbitrary. 
-   If it is not utf8 plain text, a format hint is required, 
-   the hint is appended. eg: "printer/print.rest.ps"
+      Rest buses carry the file ending ".rest". 
 
-6. Bus discovery and recovery
+
+6 RMI Format
+
+   6.1 Call
+
+      A call consists of multiple arguments separated 
+      by tab (ascii 9) and terminated by newline (ascii 10).
+
+      A call contains zero or more arguments.
+      Implementations MUST at least support a call size
+      (until \n) of 1024Bytes. They SHOULD support
+      unlimited size. Exceeding the implementation
+      limit SHOULD result in an immediate disconnect.
+
+   6.2 Argument
+
+      An argument is a utf8 string.
+      Numbers are printed and parsed as they would in
+      printf (3).
+
+      Control characters in arguments are encoded.
+      Any line beginning with an unencoded control character,
+      other then tab (ascii 9), is not data, and MUST be 
+      handled separately.
+      0 (null) -->   \0  ( 92 followed by 96 )
+      7 (bell) -->  \a  (  92 followed by 97 )
+      8 (backspace) --> \b
+      9 (tab) --> \t
+      10 (newline) --> \n
+      12 (formfeed) --> \f
+      13 (return)  --> \r
+      27 (escape)  --> \e
+      ( is encoded as \(
+      ) is encoded as \)
+      ) is encoded as \=
+      \ is encoded as \\
+
+      Optionally, complex types may be formed with ( ) and =
+
+      Array:  
+              (   (foo  bar    baz)      (boo    bleh)   (1       fg))
+      Associative Array:  
+              (a=foo  b=bar  s=(m=baz  g=1) )
+
+      Implementations that do not support these, MUST error on
+      seeing a ( ) or =
+
+   6.1 Error handling
+
+      Errors can be indicated by sending a bell (ascii 7)
+      then an error number, then optionally tab followed by
+      a message, then newline.
+      The error number SHOULD be a posix errno. If it is not,
+      it MUST NOT clash with a posix errno.
+
+      Other control characters are reserved for future use.
+      Lines beginning with such a character, MUST be ignored.
+
+
+
+7. Bus discovery and recovery
 
    Applications may establish connections to services that 
    are not started yet. Implementations SHOULD use inotify
@@ -145,7 +158,7 @@ UBUS SPECIFICATION DRAFT
    MUST handle unexpected disconnect gracefully. They SHOULD
    provide an option for automatic reconnection.
 
-7. Security
+8. Security
 
    Standard unix file permissions are used to prevent access 
    from unauthorized users. Access rights SHOULD NOT change. 
@@ -153,7 +166,7 @@ UBUS SPECIFICATION DRAFT
    without required permissions ( as opposed to trying until 
    success )
 
-8. Buses on remote hosts
+9. Buses on remote hosts
 
    Implementations SHOULD provide a way to connect to a bus 
    on a remote machine, via ssh. 
