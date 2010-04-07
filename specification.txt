@@ -119,22 +119,27 @@ UBUS SPECIFICATION DRAFT
       12 (formfeed) --> \f
       13 (return)  --> \r
       27 (escape)  --> \e
-      ( is encoded as \(
-      ) is encoded as \)
-      ) is encoded as \=
       \ is encoded as \\
-
-      Optionally, complex types may be formed with ( ) and =
+      
+      Optionally, implementations may exchange complex types.
+      The are formed with ( ) = <space> and can be nested infinitely
+      deep. Inside complex types, primitive types are wrapped 
+      in '', and literal ' is escaped.
 
       Array:  
-              (   (foo  bar    baz)      (boo    bleh)   (1       fg))
+              (('foo' 'isn\'t' 'baz')('boo' 'bleh')('1' 'fg'))
+
+
       Associative Array:  
-              (a=foo  b=bar  s=(m=baz  g=1) )
+              (a='foo' b='bar' s=(m='baz' g='1'))
 
-      Implementations that do not support these, MUST error on
-      seeing a ( ) or =
+              keys may only contain [a-zA-Z0-9_-] and MUST NOT be 
+              wrapped in ''
 
-   6.1 Error handling
+
+      Binary data SHOULD be sent the same way as strings.
+
+   6.3 Error handling
 
       Errors can be indicated by sending a bell (ascii 7)
       then an error number, then optionally tab followed by
