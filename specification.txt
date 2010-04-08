@@ -121,18 +121,18 @@ UBUS SPECIFICATION DRAFT
       13 (return)  --> \er
       27 (escape)  --> \ee
       
-      Complex types are formed with \e( \e) \f and can be 
+      Complex types are formed with \e( \e) \v and can be 
       nested infinitely deep. All elements MUST be wrapped 
-      in \f, including \e( and \e).  \f and \e here are literal 
-      ascii 12 and 27. Elements MUST be formed of key\fvalue. 
-      Implementations should simply split by \f and use \e( \e) as
+      in \v, including \e( and \e).  \v and \e here are literal 
+      ascii 12 and 27. Elements MUST be formed of key\vvalue. 
+      Implementations should simply split by \v and use \e( \e) as
       indication for nesting.
       The outermost structure MUST NOT be wrapped in (\b )\b
 
       Associative Array:  
-          \fa\ffoo\fb\fbar\fs\fbaz\fg\f\e(\fa\f1\fc\fbla\f\e)\f
+          \va\vfoo\vb\vbar\vs\vbaz\vg\v\e(\va\v1\vc\vbla\v\e)\v
 
-          for readability, \f is shown as space:
+          for readability, \v is shown as space:
           a  foo  b  bar  s  baz  g  \e( a  1 c  bla \e) 
 
           for clarity, here the same thing in json notation:
@@ -140,7 +140,7 @@ UBUS SPECIFICATION DRAFT
 
       Indexed Array:  
           To transmit indexed arrays, simply make the key the index
-          \f1\f\e(\f1\ffoo\f2\fbar\f\e)\f2\fbla\f3\fbaz\f
+          \v1\v\e(\v1\vfoo\v2\vbar\v\e)\v2\vbla\v3\vbaz\v
 
           readable:
           1 \e( 1 foo 2 bar \e)  2 bla 3 baz
