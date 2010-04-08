@@ -108,33 +108,45 @@ UBUS SPECIFICATION DRAFT
       printf (3).
 
       Control characters in arguments are encoded.
-      Any line beginning with an unencoded control character,
-      other then tab (ascii 9), is not data, and MUST be 
-      handled separately.
-      0 (null) -->   \0  ( 92 followed by 96 )
-      7 (bell) -->  \a  (  92 followed by 97 )
-      8 (backspace) --> \b
-      9 (tab) --> \t
-      10 (newline) --> \n
-      12 (formfeed) --> \f
-      13 (return)  --> \r
-      27 (escape)  --> \e
-      \ is encoded as \\
+      Any line beginning with an control character,
+      other then tab (ascii 9) or formfeed (12), is not data, 
+      and MUST be handled separately.
+      0 (null) -->   \e0  ( 96 followed by 8 )
+      7 (bell) -->  \ea  (  97  followed by 8 )
+      8 (backspace) --> \eb
+      9 (tab) --> \et
+      10 (newline) --> \en
+      11 (vtab)    --> \ev
+      12 (formfeed) --> \ef
+      13 (return)  --> \er
+      27 (escape)  --> \ee
       
-      Optionally, implementations may exchange complex types.
-      The are formed with ( ) = <space> and can be nested infinitely
-      deep. Inside complex types, primitive types are wrapped 
-      in '', and literal ' is escaped.
-
-      Array:  
-              (('foo' 'isn\'t' 'baz')('boo' 'bleh')('1' 'fg'))
-
+      Complex types are formed with \e( \e) \f and can be 
+      nested infinitely deep. All elements MUST be wrapped 
+      in \f, including \e( and \e).  \f and \e here are literal 
+      ascii 12 and 27. Elements MUST be formed of key\fvalue. 
+      Implementations should simply split by \f and use \e( \e) as
+      indication for nesting.
+      The outermost structure MUST NOT be wrapped in (\b )\b
 
       Associative Array:  
-              (a='foo' b='bar' s=(m='baz' g='1'))
+          \fa\ffoo\fb\fbar\fs\fbaz\fg\f\e(\fa\f1\fc\fbla\f\e)\f
 
-              keys may only contain [a-zA-Z0-9_-] and MUST NOT be 
-              wrapped in ''
+          for readability, \f is shown as space:
+          a  foo  b  bar  s  baz  g  \e( a  1 c  bla \e) 
+
+          for clarity, here the same thing in json notation:
+          { a:foo, b:bar, s:baz,  g : { a:1 , c:bla } }
+
+      Indexed Array:  
+          To transmit indexed arrays, simply make the key the index
+          \f1\f\e(\f1\ffoo\f2\fbar\f\e)\f2\fbla\f3\fbaz\f
+
+          readable:
+          1 \e( 1 foo 2 bar \e)  2 bla 3 baz
+
+          same array in json:
+          [ 1 , [ foo bar ] , bla, baz]
 
 
       Binary data SHOULD be sent the same way as strings.
