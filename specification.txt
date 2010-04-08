@@ -108,9 +108,6 @@ UBUS SPECIFICATION DRAFT
       printf (3).
 
       Control characters in arguments are encoded.
-      Any line beginning with an control character,
-      other then tab (ascii 9) or formfeed (12), is not data, 
-      and MUST be handled separately.
       0 (null) -->   \e0  ( 96 followed by 8 )
       7 (bell) -->  \ea  (  97  followed by 8 )
       8 (backspace) --> \eb
@@ -121,34 +118,31 @@ UBUS SPECIFICATION DRAFT
       13 (return)  --> \er
       27 (escape)  --> \ee
       
-      Complex types are formed with \e( \e) \v and can be 
-      nested infinitely deep. All elements MUST be wrapped 
-      in \v, including \e( and \e).  \v and \e here are literal 
-      ascii 12 and 27. Elements MUST be formed of key\vvalue. 
-      Implementations should simply split by \v and use \e( \e) as
-      indication for nesting.
-      The outermost structure MUST NOT be wrapped in (\b )\b
+      Complex types are formed with \e{ \e} \e[ \e] \v and can 
+      be  nested infinitely deep. All elements MUST end in \v, 
+      including {} [].  \v and \e here are literal ascii 12 
+      and 27. Implementations should simply split by \v and 
+      use { } [] as indication for nesting.
 
       Associative Array:  
-          \va\vfoo\vb\vbar\vs\vbaz\vg\v\e(\va\v1\vc\vbla\v\e)\v
+          Elements MUST be formed of key\vvalue\v, 
+          where key MUST NOT be empty.
+          \e{\va\vfoo\vb\vbar\vs\vbaz\vg\v\e{\va\v1\vc\vbla\v\e}\v\e}\v
 
-          for readability, \v is shown as space:
-          a  foo  b  bar  s  baz  g  \e( a  1 c  bla \e) 
+          for readability, \v is shown as space here:
+          \e{ a  foo  b  bar  s  baz  g  \e{ a  1 c  bla \e} \e}
 
           for clarity, here the same thing in json notation:
           { a:foo, b:bar, s:baz,  g : { a:1 , c:bla } }
 
       Indexed Array:  
-          To transmit indexed arrays, simply make the key the index
-          Indexes begin at 0
-          \v0\vb\v1\v\e(\v1\vfoo\v2\vbar\v\e)\v2\vbla\v3\vbaz\v
+          \e[\vb\v\e[\vfoo\vbar\v\e]\vbla\vbaz\v\e]\v
 
           readable:
-          0 b 1 \e( 1 foo 2 bar \e)  2 bla 3 baz
+          \e[ b \e[ foo bar \e]  bla baz \e]
 
           same array in json:
           [ b, [ foo bar ] , bla, baz]
-
 
       Binary data SHOULD be sent the same way as strings.
 
