@@ -140,13 +140,14 @@ UBUS SPECIFICATION DRAFT
 
       Indexed Array:  
           To transmit indexed arrays, simply make the key the index
-          \v1\v\e(\v1\vfoo\v2\vbar\v\e)\v2\vbla\v3\vbaz\v
+          Indexes begin at 0
+          \v0\vb\v1\v\e(\v1\vfoo\v2\vbar\v\e)\v2\vbla\v3\vbaz\v
 
           readable:
-          1 \e( 1 foo 2 bar \e)  2 bla 3 baz
+          0 b 1 \e( 1 foo 2 bar \e)  2 bla 3 baz
 
           same array in json:
-          [ 1 , [ foo bar ] , bla, baz]
+          [ b, [ foo bar ] , bla, baz]
 
 
       Binary data SHOULD be sent the same way as strings.
