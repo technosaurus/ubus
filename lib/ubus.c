@@ -164,7 +164,9 @@ UBUS_STATUS  ubus_activate   (ubus_chan_t * s){
 }
 int  ubus_write  (ubus_chan_t * s, const void * buff, int len){
     ubus_channel * chan=(ubus_channel*)(s);
-    return send(chan->fd,buff,len,0);
+    int r=send(chan->fd,buff,len,0);
+    fsync(chan->fd);
+    return r;
 }
 int  ubus_read   (ubus_chan_t * s, void * buff, int len){
     ubus_channel * chan=(ubus_channel*)(s);
