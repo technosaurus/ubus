@@ -1,1 +1,10 @@
+Specification and wtf this is:
+   read specification.txt
+
+C bindings and binary:
+   If your unix has select(3)  just type "make"
+   if it doesn't, implement the two missing bits in lib/ubus.c and send me a patch ;)
+   or specify -DNO_SELECT
+   See some fun examples in examples/*  that use the C select api.
+   
 
