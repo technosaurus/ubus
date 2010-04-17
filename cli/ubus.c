@@ -241,9 +241,11 @@ int main(int argc, char ** argv){
             //select clients
             ubus_client* c=clients;
             while(c){
-                int fd=ubus_chan_fd(c->chan);
-                FD_SET  (fd, &rfds);
-                if(fd>maxfd) maxfd=fd;
+                if(ubus_status(c->chan)!=UBUS_EOF){
+                    int fd=ubus_chan_fd(c->chan);
+                    FD_SET  (fd, &rfds);
+                    if(fd>maxfd) maxfd=fd;
+                }
                 //select on client handler
                 if(c->handler!=0){
                     FD_SET  (c->handler_out, &rfds);
@@ -305,7 +307,8 @@ int main(int argc, char ** argv){
                 int fd=ubus_chan_fd(c->chan);
                 if(FD_ISSET(fd, &rfds)){
                     char buff [100];
-                    if(ubus_activate(c->chan)==UBUS_READY){
+                    int ret=ubus_activate(c->chan);
+                    if(ret==UBUS_READY){
                         int n=ubus_read(c->chan,&buff,100);
                         if(n==0 && c->handler!=0 ){
                             close(c->handler_in);
