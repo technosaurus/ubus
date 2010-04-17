@@ -1,5 +1,13 @@
+all: ubus examples
+
+examples:  examples/echo examples/clock
+
+examples/echo: examples/echo.c libubus.a
+	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
+examples/clock: examples/clock.c libubus.a
+	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
 ubus: .obj/ubus.o libubus.a
-	$(CC) -static  $(LDLAGS) $< libubus.a -o $@
+	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
 .obj/ubus.o: .obj cli/ubus.c
 	$(CC) -I./lib/ $(CFLAGS) -c cli/ubus.c -o $@
 

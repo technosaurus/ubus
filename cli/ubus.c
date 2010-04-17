@@ -57,6 +57,7 @@ static ubus_client * ubus_client_add(ubus_chan_t * chan){
     }
     fprintf(stderr,"corrupted linked list");
     abort();
+    return 0;
 }
 static ubus_client *  ubus_client_del(ubus_client * c){
     ubus_client * n= NULL;
@@ -121,7 +122,7 @@ static int ubus_fork_handler(char ** args,int * in,int * out){
     return r;
 }
 
-static void ubus_broadcast(const void * buff,int size) {
+static void ubus_broadcast_l(const void * buff,int size) {
     ubus_client * c2=clients;
     while(c2){
         if (ubus_write(c2->chan,buff,size)<1){
@@ -282,7 +283,7 @@ int main(int argc, char ** argv){
                 if(FD_ISSET(si_handler_out, &rfds)){
                     char buff [100];
                     int n=read(si_handler_out,&buff,100);
-                    ubus_broadcast(&buff,n);
+                    ubus_broadcast_l(&buff,n);
                 }
             }
 
@@ -328,7 +329,7 @@ int main(int argc, char ** argv){
                             write(1,&buff,n);
                             if (mode==MODE_POOL){
                                 c=c->next; //could get deleted
-                                ubus_broadcast(&buff,n);
+                                ubus_broadcast_l(&buff,n);
                                 continue;
                             }
                         }
@@ -349,7 +350,7 @@ int main(int argc, char ** argv){
                         //FIXME: do i have to flush the other fds?
                         exit(0);
                     }
-                    ubus_broadcast(&buff,n);
+                    ubus_broadcast_l(&buff,n);
                     if(mode==MODE_POOL){
                         write(fileno(stdout),&buff,n);
                     }

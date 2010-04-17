@@ -50,3 +50,42 @@ static int mksocketpath(const char *s){
     free(tmp);
     return r;
 }
+
+static ubus_channel * ubus_client_add(ubus_service * service, ubus_channel * c){
+    c->next=NULL;
+    c->prev=NULL;
+    if(service->chanlist==NULL){
+        service->chanlist=c;
+        return c;
+    }
+    ubus_channel * cur=service->chanlist;
+    while(cur){
+        if(cur->next==NULL){
+            cur->next=c;
+            c->prev=cur;
+            return c;
+        }
+        cur=cur->next;
+    }
+    fprintf(stderr,"corrupted linked list");
+    abort();
+}
+static ubus_channel *  ubus_client_del(ubus_service * service, ubus_channel  * c){
+    if(service!=c->service){
+        fprintf(stderr,"eerr ... trying to delete channel from foreign service. something broke.");
+        abort();
+    }
+    ubus_channel * n= c->next;
+    if(c->prev==NULL){
+        if(c!=service->chanlist){
+            fprintf(stderr,"corrupted linked list");
+            abort;
+        }
+        service->chanlist=0;
+    }else{
+        c->prev->next=c->next;
+    }
+    c->service=0;
+    ubus_disconnect(c);
+    return n;
+}

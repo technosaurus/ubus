@@ -11,23 +11,36 @@
 #include <sys/inotify.h>
 
 #include "ubus.h"
-#include "util.c"
 
-typedef struct {
+
+struct ubus_channel_s;
+typedef struct ubus_service_s{
+    struct ubus_channel_s * chanlist;
     int fd;
     struct sockaddr_un local;
 } ubus_service;
 
-typedef struct{
+typedef struct ubus_channel_s{
     UBUS_STATUS status;
     int fd;
     int inotify;
+    ubus_service * service;
     struct sockaddr_un remote;
+
+    //todo: safe bytes, make those flags
+    int activated;
+    int isnew;
+
+    struct ubus_channel_s * next;
+    struct ubus_channel_s * prev;
 } ubus_channel;
+
+#include "util.c"
 
 
 ubus_t * ubus_create (const char * uri){
     ubus_service * service=(ubus_service*)malloc(sizeof(ubus_service));
+    service->chanlist=NULL;
     if(mksocketpath(uri)<0){
         return 0;
     }
@@ -58,6 +71,11 @@ ubus_t * ubus_accept  (ubus_t * s){
     ubus_channel * chan = malloc(sizeof(ubus_channel));
     chan->status=UBUS_CONNECTED;
     chan->inotify=0;
+    chan->service=server;
+    chan->next=NULL;
+    chan->prev=NULL;
+    chan->activated=0;
+    chan->isnew=1;
     int t = sizeof(chan->remote);
     chan->fd=accept(server->fd, (struct sockaddr *)&(chan->remote),&t);
     if (chan->fd==-1) {
@@ -65,21 +83,114 @@ ubus_t * ubus_accept  (ubus_t * s){
         return 0;
     }else{
         fcntl(chan->fd, F_SETFL, fcntl(chan->fd, F_GETFL) | O_NONBLOCK);
+        ubus_client_add(server, chan);
         return chan;
     }
 }
 void   ubus_destroy  (ubus_t * s){
     ubus_service * server= (ubus_service*)(s);
+
+    ubus_channel * e=server->chanlist;
+    while(e){
+        e=ubus_client_del(server,e);
+    }
     close(server->fd);
     unlink(server->local.sun_path);
     free(server);
 }
+
+//high level bus api
+
+int  ubus_broadcast  (ubus_t * s, const void * buff, int len){
+    ubus_service * server= (ubus_service*)(s);
+    ubus_channel * e=server->chanlist;
+    while(e){
+        ubus_write(e,buff,len);
+        e=e->next;
+    }
+    return len;
+}
+ubus_chan_t * ubus_ready_chan (ubus_t * s){
+    ubus_service * server= (ubus_service*)(s);
+    ubus_channel * e=server->chanlist;
+    while(e){
+        if(e->activated){
+            e->activated=0;
+            return e;
+        }
+        e=e->next;
+    }
+    return 0;
+}
+
+ubus_chan_t * ubus_fresh_chan (ubus_t * s){
+    ubus_service * server= (ubus_service*)(s);
+    ubus_channel * e=server->chanlist;
+    while(e){
+        if(e->isnew){
+            e->isnew=0;
+            return e;
+        }
+        e=e->next;
+    }
+    return 0;
+}
+
+
+#ifndef NO_SELECT
+int ubus_select_all     (ubus_t * s, fd_set * fds){
+    ubus_service * server= (ubus_service*)(s);
+
+    int fd=ubus_fd(server);
+    int max=fd;
+    FD_SET(fd,fds);
+    ubus_channel * e=server->chanlist;
+    while(e){
+        fd=ubus_chan_fd(e);
+        FD_SET(fd,fds);
+        if(fd>max){
+            max=fd;
+        }
+        e=e->next;
+    }
+    return max;
+}
+
+void ubus_activate_all   (ubus_t * s, fd_set * fds,int flags){
+    ubus_service * server= (ubus_service*)(s);
+    ubus_channel * e=server->chanlist;
+    while(e){
+        if(FD_ISSET(ubus_chan_fd(e),fds)){
+            ubus_activate(e);
+            if(flags & UBUS_IGNORE_INBOUND){
+                static char  ignored_buff[1000];
+                if(ubus_read(e,&ignored_buff,1000)<1){
+                    ubus_disconnect(e);
+                }
+            }else{
+                e->activated=1;
+            }
+        }
+        e=e->next;
+    }
+    if(FD_ISSET(ubus_fd(server),fds)){
+        ubus_accept(server);
+    }
+}
+#endif
+
+
+
+
+
+//chan api
 
 ubus_chan_t * ubus_connect  (const char * uri){
     ubus_channel * chan = malloc(sizeof(ubus_channel));
     chan->status=UBUS_INIT;
     chan->inotify=0;
     chan->fd=0;
+    chan->service=0;
     chan->remote.sun_family = AF_UNIX;
     strcpy(chan->remote.sun_path, uri);
     return (ubus_chan_t*)chan;
@@ -175,6 +286,8 @@ int  ubus_read   (ubus_chan_t * s, void * buff, int len){
         chan->status=UBUS_EOF;
     }else if(r<0){
         chan->status=UBUS_ERROR;
+    }else{
+        chan->status=UBUS_CONNECTED;
     }
     return r;
 }
@@ -184,11 +297,14 @@ void ubus_close (ubus_chan_t * s){
 }
 void ubus_disconnect (ubus_chan_t * s){
     ubus_channel * chan=(ubus_channel*)(s);
-
-    if(chan->inotify!=0){
-        close (chan->inotify);
+    if(chan->service){
+        ubus_client_del(chan->service,chan);
+    }else{
+        if(chan->inotify!=0){
+            close (chan->inotify);
+        }
+        close(chan->fd);
+        free(chan);
     }
-    close(chan->fd);
-    free(chan);
 }
 
