@@ -2,9 +2,21 @@ Specification and wtf this is:
    read specification.txt
 
 C bindings and binary:
-   If your unix has select(3)  just type "make"
-   if it doesn't, implement the two missing bits in lib/ubus.c and send me a patch ;)
-   or specify -DNO_SELECT
+   On linux,  just type "make"
+
+   For other unix, the implementation for the equivalent of inotify is missing. 
+   That'll be fixed slowly, but patches wellcome, of course.
+   If your OS doesn't have select(), please implement the two missing 
+   bits in lib/ubus.c and send me a patch, since i dont have access to something 
+   like that.
+   If your OS doesn't even have unix domain sockets, get a better OS.
+
    See some fun examples in examples/*  that use the C select api.
    
 
+Other languages
+   Read the spec, its trivial. All you need is unix sockets. There is no need to 
+   depend on the C implementation, so no need to wait for me to fix it for your 
+   OS either ;)
+   When you wrote bindings for your favorite language, let me know so i can add a 
+   link here.
