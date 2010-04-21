@@ -158,7 +158,6 @@ UBUS SPECIFICATION DRAFT
       Lines beginning with such a character, MUST be ignored.
 
 
-
 7. Bus discovery and recovery
 
    Applications may establish connections to services that 
@@ -178,14 +177,70 @@ UBUS SPECIFICATION DRAFT
    without required permissions ( as opposed to trying until 
    success )
 
-9. Buses on remote hosts
+9. Scripting and buses on remote hosts
 
-   Implementations SHOULD provide a way to connect to a bus 
-   on a remote machine, via ssh. 
-   The url format for remote buses is:
-      user:password@host:/path/to/bus
-   user and password are optional. if the path does not begin 
-   with a /, it is relative to the remote home directory.
-   Implementations may assume the "ubus" binary to be available
-   on the remote host, so they may simple popen (3):
-      "ssh host ubus connect /path/to/bus"
+   Applications can create and connect to buses on remote 
+   machines, via ssh. For that to work, the remote machine
+   must have a set of binaries installed.
+   
+   If a path to a bus does not begin with "/" or "./" , 
+   it is relative to ~/.ipc/.
+
+   An implementation can just call 
+      "ssh host ubus app/foo.signal"
+
+   9.1 "ubus"
+
+      The "ubus" binary allocates channels and maintains 
+      connections.
+      Messages from connections are written to stdout, 
+      prefixed with an identifier for the bus and the client.
+      They are rewritten as
+        command\tbus\tclient\tactualmessage\n, 
+      so that the ids are actually rmi arguments.
+
+      for the sake of readability, all \t are shown here 
+      as space again.
+
+      Commands via stdin:
+
+        b 4 app/fish.signal : create a new bus app/fish.signal 
+                              and identify it with "4"
+        u 4                 : destroy bus 4
+        w 4 123 ...         : message client 123 on bus 4
+        d 4 123             : disconnect client 123 on bus 4
+
+      On stdout you get:
+
+        b 4 1               : bus 4 created
+        b 4 0 123 dummy     : bus 4 not created because of
+                              error 123 "dummy"
+        c 4 123             : client 123 connected
+        r 4 123 ...         : message from client 123
+        d 4 123             : client 123 disconnected
+
+
+      The identifier is arbitrary text, and can be reused for 
+      a new client, after an old one disconnected.
+      A * can be used as client identifier to mean all 
+      connected clients, ie broadcast. A * in the bus identifier
+      has no meaning, and is part of the name.
+
+      Lines beginning with an unknown command, MUST be ignored.
+
+      Commandline arguments are interpreted as buses to open.
+      Ie, ubus foo/bla bar/baz  will open two channels and give 
+      them the idents 1 and 2.
+
+    9.3 "ubus-signal"
+    
+      A convenience implementation, that does not prefix any message.
+      Stdin is broadcasted, Stdout shows all data from all clients,
+      interleaved. Can be used for properties as well.
+
+    9.4 "ubus-connect"
+
+      connects to a bus. stdin/stdout are wired to the bus.
+    
+      Identical to "socat STDIO UNIX-CONNECT:/path/to/bus", except 
+      that it is safe to assume its existence.

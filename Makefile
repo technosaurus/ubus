@@ -1,20 +1,20 @@
-all: ubus examples
+BINS= ubus ubus-connect ubus-signal
+EXAMPLES= examples/echo examples/clock
 
-examples:  examples/echo examples/clock
+all: .obj cli examples
 
-examples/echo: examples/echo.c libubus.a
+examples: $(EXAMPLES)
+examples/%: examples/%.c libubus.a
 	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
-examples/clock: examples/clock.c libubus.a
-	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
-ubus: .obj/ubus.o libubus.a
-	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
-.obj/ubus.o: .obj cli/ubus.c
-	$(CC) -I./lib/ $(CFLAGS) -c cli/ubus.c -o $@
 
-libubus.a: .obj/libubus.o 
+cli: $(BINS)
+%: .obj/%.o libubus.a
+	$(CC) -static  $(LDLAGS) $< libubus.a -o $@
+.obj/%.o: cli/%.c
+	$(CC) -static -I./lib/ $(CFLAGS) -c $< -o $@
+libubus.a: .obj/libubus.o
 	$(AR) rcs libubus.a .obj/libubus.o
-
-.obj/libubus.o: .obj lib/ubus.c lib/ubus.h lib/util.c
+.obj/libubus.o: lib/ubus.c lib/ubus.h lib/util.c
 	$(CC) $(CFLAGS) -c lib/ubus.c -o .obj/libubus.o
 
 .obj:
@@ -23,6 +23,7 @@ libubus.a: .obj/libubus.o
 clean: 
 	rm -rf .obj
 	rm -f ubus libubus.a
+	rm -f $(BINS) $(EXAMPLES)
 install: ubus
 	cp libubus.a /usr/lib/
 	cp lib/ubus.h /usr/include/
