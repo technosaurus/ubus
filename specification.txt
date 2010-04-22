@@ -110,8 +110,8 @@ UBUS SPECIFICATION DRAFT
       printf (3).
 
       Control characters in arguments are encoded.
-      0 (null) -->   \e0  ( 96 followed by 8 )
-      7 (bell) -->  \ea  (  97  followed by 8 )
+      0 (null) -->   \e0  ( 27 followed by 48 )
+      7 (bell) -->  \ea  (  27  followed by 97 )
       8 (backspace) --> \eb
       9 (tab) --> \et
       10 (newline) --> \en
@@ -179,17 +179,12 @@ UBUS SPECIFICATION DRAFT
    without required permissions ( as opposed to trying until 
    success )
 
-9. Scripting and buses on remote hosts
+9. Scripting interface
 
-   Applications can create and connect to buses on remote 
-   machines, via ssh. For that to work, the remote machine
-   must have a set of binaries installed.
-   
+   Binaries are provided that help in scripting and remoting.   
+
    If a path to a bus does not begin with "/" or "./" , 
    it is relative to ~/.ipc/.
-
-   An implementation can just call 
-      "ssh host ubus app/foo.signal"
 
    9.1 "ubus"
 
@@ -234,15 +229,46 @@ UBUS SPECIFICATION DRAFT
       Ie, ubus foo/bla bar/baz  will open two channels and give 
       them the idents 1 and 2.
 
+      Client connections to existing buses are also possible:
+
+        k 5 app/fish.signal : connect to bus app/fish.signal
+        i 5                 : disconnect 
+
+      On stdout:
+
+        k 5 1               : bus 4 connected
+        k 5 0 123 dummy     : bus 4 not connected because of
+                              error 123 "dummy"
+      
+      Read/writes are the same as with buses you created. The
+      client identifier must then always be empty.
+
     9.3 "ubus-signal"
     
-      A convenience implementation, that does not prefix any message.
-      Stdin is broadcasted, Stdout shows all data from all clients,
-      interleaved. Can be used for properties as well.
+      Creates one bus given as command line argument.
+      Does not prefix any message. Stdin is broadcasted, 
+      Stdout shows all data from all clients, interleaved. 
+      Can be used for properties as well.
 
     9.4 "ubus-connect"
 
-      connects to a bus. stdin/stdout are wired to the bus.
+      connects to one bus given as command line argument.
+      stdin/stdout are wired to the bus.
     
       Identical to "socat STDIO UNIX-CONNECT:/path/to/bus", except 
       that it is safe to assume its existence.
+
+10. Buses on remote machines
+
+   10.1 ssh
+
+     Applications can create and connect to buses on remote 
+     machines, via ssh. For that to work, the remote machine
+     must have the scripting interface installed.
+
+     An implementation can just call 
+       "ssh host ubus"
+   
+   10.2 tcp
+
+    TODO: inetd? whats with encryption? do we even care?
