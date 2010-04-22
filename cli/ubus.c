@@ -102,16 +102,13 @@ int main(int argc, char ** argv){
                 fflush(stdout);
             }
             while(c=ubus_ready_chan (cur->bus)){
-                char buff [1024];
-                int len=ubus_read(c,&buff,1024);
+                char buff [3001];
+                int len=ubus_read(c,&buff,3001);
                 buff[len]=0;
-                if(len>0){
-                    /*
-                      FIXME: this is so wrong. but i'm so lazy.
-                      Someone please implement actual buffering.
-                      At least check if there was actually an \n
-                      in the buff.
-                    */
+                if(len>=3000){
+                    static const char * overflowe="\a75\tcall too large.\n";
+                    ubus_write(c,overflowe,strlen(overflowe));
+                } else if(len>0){
                     printf("r\t%s\t%i\t%s",(int)cur->ident,(int)c,&buff);
                     fflush(stdout);
                 }else{
@@ -123,10 +120,13 @@ int main(int argc, char ** argv){
         }
 
         if(FD_ISSET(0, &rfds)){
-            char buff [1000];
-            int n=read(0,&buff,1000);
+            char buff [3001];
+            int n=read(0,&buff,3001);
             buff[n]=0;
-            if(n<0){
+            if(n>=3000){
+                fprintf(stdout,"\a75\tcall too large.\n");
+                continue;
+            }else if(n<0){
                 perror("read");
                 exit(errno);
             } else if(n==0){
