@@ -102,10 +102,10 @@ int main(int argc, char ** argv){
                 fflush(stdout);
             }
             while(c=ubus_ready_chan (cur->bus)){
-                char buff [3001];
-                int len=ubus_read(c,&buff,3001);
+                static char buff [256002];
+                int len=ubus_read(c,&buff,256001);
                 buff[len]=0;
-                if(len>=3000){
+                if(len>=256001){
                     static const char * overflowe="\a75\tcall too large.\n";
                     ubus_write(c,overflowe,strlen(overflowe));
                 } else if(len>0){
@@ -120,10 +120,10 @@ int main(int argc, char ** argv){
         }
 
         if(FD_ISSET(0, &rfds)){
-            char buff [3001];
-            int n=read(0,&buff,3001);
+            static char buff [256002];
+            int n=read(0,&buff,256001);
             buff[n]=0;
-            if(n>=3000){
+            if(n>=256001){
                 fprintf(stdout,"\a75\tcall too large.\n");
                 continue;
             }else if(n<0){

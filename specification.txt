@@ -97,11 +97,11 @@ UBUS SPECIFICATION DRAFT
 
       A call contains zero or more arguments.
       Implementations MUST at least support a call size
-      (until \n) of 1024Bytes. They SHOULD support
-      unlimited size. Exceeding the implementation
-      limit SHOULD result in an immediate disconnect, 
-      but at least MUST be responded with an error 75 
-      ( EOVERFLOW )
+      (line including \n) of 256000 Bytes. (250Kb).
+      They SHOULD support unlimited size. Exceeding the 
+      implementation limit SHOULD result in an immediate 
+      disconnect, but at least MUST be responded with 
+      an error 75 ( EOVERFLOW )
 
    6.2 Argument
 
