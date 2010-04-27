@@ -24,8 +24,10 @@ clean:
 	rm -rf .obj
 	rm -f ubus libubus.a
 	rm -f $(BINS) $(EXAMPLES)
-install: ubus
+install: $(BINS)
 	cp libubus.a /usr/lib/
 	cp lib/ubus.h /usr/include/
-	cp ubus ubus_
-	mv ubus_ /usr/bin/ubus
+	mkdir .tmp
+	cp $(BINS) .tmp/
+	mv .tmp/*  /usr/bin/
+	rm -rf .tmp

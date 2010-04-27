@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string.h>
 #include <fcntl.h>
 #include "ubus.h"
@@ -23,6 +24,7 @@ static struct ubus_list_el * l_add(ubus_t * bus){
     c->bus=bus;
     c->next=NULL;
     c->prev=NULL;
+    c->ident=NULL;
     if(buslist==NULL){
         buslist=c;
         return c;
@@ -72,8 +74,16 @@ static struct ubus_list_el * find_by_ident(char * ident){
     return 0;
 }
 
+static void cleanup(){
+    while(buslist){
+        fprintf(stderr,"%p",buslist);
+        buslist=l_del(buslist);
+    }
+}
 
 int main(int argc, char ** argv){
+    atexit(cleanup);
+
     fd_set rfds;
     fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
     for(;;) {
@@ -144,7 +154,7 @@ int main(int argc, char ** argv){
                     char * path=strtok_r(0, "\t\n", &saveptr);
                     BITCH_ABOUT_NULLPTR(path);
 
-                    ubus_t * bus=ubus_create(path);
+                    ubus_t * bus=ubus_create(resolved_bus_path(path));
                     if(bus){
                         fprintf(stdout,"b\t%s\t1\n",ident);
                         struct ubus_list_el *el=  l_add(bus);
