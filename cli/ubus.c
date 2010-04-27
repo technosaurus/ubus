@@ -76,13 +76,29 @@ static struct ubus_list_el * find_by_ident(char * ident){
 
 static void cleanup(){
     while(buslist){
-        fprintf(stderr,"%p",buslist);
         buslist=l_del(buslist);
     }
+}
+static void signal_handler (int signal){
+    //FUUU standards compliance. Someone tell me how to do that right? Whatever, works fine on gnu..
+    fprintf(stderr,"SIGNAL %i. going down.\n",signal);
+    exit(signal);
 }
 
 int main(int argc, char ** argv){
     atexit(cleanup);
+    struct sigaction action;
+    memset(&action, 0, sizeof(action));
+    action.sa_handler = signal_handler;
+    if(sigaction(SIGSEGV, &action, NULL) < 0){
+        perror("sigaction");
+    }
+    if(sigaction(SIGINT, &action, NULL) < 0){
+        perror("sigaction");
+    }
+    if(sigaction(SIGTERM, &action, NULL) < 0){
+        perror("sigaction");
+    }
 
     fd_set rfds;
     fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
@@ -164,7 +180,6 @@ int main(int argc, char ** argv){
                         fprintf(stdout,"b\t%s\t0\t%i\tshit broke\n",ident,errno);
                         fflush(stdout);
                     }
-
                     break;;
                 }
                 case 'u':{
