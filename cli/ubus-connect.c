@@ -24,9 +24,11 @@ int main(int argc, char ** argv){
     }
     fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
     fd_set rfds;
+    int stdindead = 0;
     for(;;) {
         FD_ZERO (&rfds);
-        FD_SET  (0, &rfds);
+        if (!stdindead)
+            FD_SET  (0, &rfds);
         int cfd=ubus_chan_fd(chan);
         FD_SET  (cfd, &rfds);
         if (select(cfd+2, &rfds, NULL, NULL, NULL) < 0){
@@ -37,6 +39,7 @@ int main(int argc, char ** argv){
             char buff [100];
             int n=read(0,&buff,100);
             if(n==0){
+                stdindead = 1;
                 ubus_close(chan);
                 continue;
             }

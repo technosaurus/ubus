@@ -5,7 +5,7 @@ all: .obj cli examples
 
 examples: $(EXAMPLES)
 examples/%: examples/%.c libubus.a
-	$(CC) -static  $(LDLAGS) $< ./libubus.a -o $@
+	$(CC) -static  -Ilib $(LDLAGS) $< ./libubus.a -o $@
 
 cli: $(BINS)
 %: .obj/%.o libubus.a
