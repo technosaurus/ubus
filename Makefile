@@ -1,11 +1,16 @@
-BINS= ubus ubus-connect ubus-signal
-EXAMPLES= examples/echo examples/clock
+# ubus - unix bus
+# See COPYING for copyright and license details.
+
+include config.mk
+
+BINS=ubus ubus-connect ubus-signal
+EXAMPLES=examples/echo examples/clock
 
 all: .obj cli examples
 
 examples: $(EXAMPLES)
 examples/%: examples/%.c libubus.a
-	$(CC) -static  -Ilib $(LDLAGS) $< ./libubus.a -o $@
+	$(CC) -static -Ilib $(LDLAGS) $< ./libubus.a -o $@
 
 cli: $(BINS)
 %: .obj/%.o libubus.a
@@ -25,9 +30,9 @@ clean:
 	rm -f ubus libubus.a
 	rm -f $(BINS) $(EXAMPLES)
 install: $(BINS)
-	cp libubus.a /usr/lib/
-	cp lib/ubus.h /usr/include/
+	cp libubus.a ${PREFIX}/lib/
+	cp lib/ubus.h ${PREFIX}/include/
 	mkdir .tmp
 	cp $(BINS) .tmp/
-	mv .tmp/*  /usr/bin/
+	mv .tmp/*  ${PREFIX}/bin/
 	rm -rf .tmp
