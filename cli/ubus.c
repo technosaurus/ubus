@@ -124,7 +124,7 @@ int main(int argc, char ** argv){
             ubus_activate_all(cur->bus,&rfds,0);
             ubus_chan_t * c;
             while(c=ubus_fresh_chan (cur->bus)){
-                printf("c\t%s\t%i\n",(int)cur->ident,(int)c);
+                printf("c\t%s\t%i\n", cur->ident, c);
                 fflush(stdout);
             }
             while(c=ubus_ready_chan (cur->bus)){
@@ -135,10 +135,10 @@ int main(int argc, char ** argv){
                     static const char * overflowe="\a75\tcall too large.\n";
                     ubus_write(c,overflowe,strlen(overflowe));
                 } else if(len>0){
-                    printf("r\t%s\t%i\t%s",(int)cur->ident,(int)c,&buff);
+                    printf("r\t%s\t%i\t%s", cur->ident, c, &buff);
                     fflush(stdout);
                 }else{
-                    printf("d\t%s\t%i\n",(int)cur->ident,(int)c);
+                    printf("d\t%s\t%i\n", cur->ident, c);
                     fflush(stdout);
                 }
             }
@@ -187,7 +187,7 @@ int main(int argc, char ** argv){
                     BITCH_ABOUT_NULLPTR(ident);
                     struct ubus_list_el * cur=find_by_ident(ident);
                     if(cur==0){
-                        fprintf(stdout,"\a667\tno such channel.\n"); continue;
+                        fprintf(stdout,"\a667\tno such channel.\n");
                         continue;
                     }else{
                         l_del(cur);
@@ -202,14 +202,14 @@ int main(int argc, char ** argv){
 
                     struct ubus_list_el * cur=find_by_ident(ident);
                     if(cur==0){
-                        fprintf(stdout,"\a667\tno such channel.\n"); continue;
+                        fprintf(stdout,"\a667\tno such channel.\n");
                         continue;
                     }else{
                         char * rest=strtok_r(0, "", &saveptr);;
                         if(chan_s[0]=='*'){
                             ubus_broadcast(cur->bus,rest,strlen(rest));
                         }else{
-                            ubus_chan_t * chan= (ubus_chan_t*)(atoi(chan_s));
+                            ubus_chan_t *chan = (ubus_chan_t *)(atol(chan_s));
                             ubus_write(chan,rest,strlen(rest));
                         }
                     }
@@ -223,14 +223,15 @@ int main(int argc, char ** argv){
 
                     struct ubus_list_el * cur=find_by_ident(ident);
                     if(cur==0){
-                        fprintf(stdout,"\a667\tno such channel.\n"); continue;
+                        fprintf(stdout,"\a667\tno such channel.\n");
                         continue;
                     }else{
                         char * rest=strtok_r(0, "", &saveptr);;
                         if(chan_s[0]=='*'){
-                            fprintf(stdout,"\a668\tcant disconnect all (yet).\n"); continue;
+                            fprintf(stdout,"\a668\tcant disconnect all (yet).\n");
+			    continue;
                         }else{
-                            ubus_chan_t * chan= (ubus_chan_t*)(atoi(chan_s));
+                            ubus_chan_t *chan = (ubus_chan_t *)(atol(chan_s));
                             ubus_disconnect(chan);
                         }
                     }
@@ -244,5 +245,4 @@ int main(int argc, char ** argv){
     }
     return 0;
 }
-
 
