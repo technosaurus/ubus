@@ -14,9 +14,9 @@ examples/%: examples/%.c libubus.a
 
 cli: $(BINS)
 %: .obj/%.o libubus.a
-	$(CC) -static  $(LDLAGS) $< libubus.a -o $@
+	$(CC) $(CFLAGS) -static  $(LDLAGS) $< libubus.a -o $@
 .obj/%.o: cli/%.c
-	$(CC) -static -I./lib/ $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -static -I./lib/ $(CFLAGS) -c $< -o $@
 libubus.a: .obj/libubus.o
 	$(AR) rcs libubus.a .obj/libubus.o
 .obj/libubus.o: lib/ubus.c lib/ubus.h lib/util.c

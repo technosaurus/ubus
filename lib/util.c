@@ -79,7 +79,7 @@ static ubus_channel *  ubus_client_del(ubus_service * service, ubus_channel  * c
     if(c->prev==NULL){
         if(c!=service->chanlist){
             fprintf(stderr,"corrupted linked list");
-            abort;
+            abort();
         }
         service->chanlist=0;
     }else{

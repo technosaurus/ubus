@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "ubus.h"
 #include "tools.h"
 
@@ -17,7 +18,7 @@ struct  ubus_list_el{
     struct ubus_list_el * next;
     struct ubus_list_el * prev;
 };
-static struct ubus_list_el * buslist=NULL;
+static struct ubus_list_el * buslist = NULL;
 
 static struct ubus_list_el * l_add(ubus_t * bus){
     struct ubus_list_el* c=(struct ubus_list_el *)malloc(sizeof(struct ubus_list_el));
@@ -44,15 +45,15 @@ static struct ubus_list_el * l_add(ubus_t * bus){
 }
 static struct ubus_list_el * l_del(struct ubus_list_el * c){
     struct ubus_list_el * n= NULL;
-    if(c->prev==NULL){
-        if(c!=buslist){
-            fprintf(stderr,"corrupted linked list");
-            abort;
+    if(c->prev == NULL){
+        if(c != buslist){
+            fprintf(stderr, "corrupted linked list");
+            abort();
         }
-        buslist=0;
-    }else{
-        struct ubus_list_el* n= c->next;
-        c->prev->next=c->next;
+        buslist = 0;
+    } else {
+        c->prev->next = c->next;
+        c->next->prev = c->prev;
     }
     ubus_destroy(c->bus);
     free(c->ident);
@@ -63,7 +64,6 @@ static struct ubus_list_el * l_del(struct ubus_list_el * c){
 
 static struct ubus_list_el * find_by_ident(char * ident){
     struct ubus_list_el * cur=buslist;
-    char found=0;
     while(cur){
         if(strcmp(cur->ident,ident)==0){
             return cur;
@@ -123,11 +123,11 @@ int main(int argc, char ** argv){
         while(cur){
             ubus_activate_all(cur->bus,&rfds,0);
             ubus_chan_t * c;
-            while(c=ubus_fresh_chan (cur->bus)){
-                printf("c\t%s\t%i\n", cur->ident, c);
+            while ((c = ubus_fresh_chan (cur->bus))) {
+                printf("c\t%s\t%p\n", cur->ident, c);
                 fflush(stdout);
             }
-            while(c=ubus_ready_chan (cur->bus)){
+            while ((c=ubus_ready_chan (cur->bus))) {
                 static char buff [256002];
                 int len=ubus_read(c,&buff,256001);
                 buff[len]=0;
@@ -135,10 +135,10 @@ int main(int argc, char ** argv){
                     static const char * overflowe="\a75\tcall too large.\n";
                     ubus_write(c,overflowe,strlen(overflowe));
                 } else if(len>0){
-                    printf("r\t%s\t%i\t%s", cur->ident, c, &buff);
+                    printf("r\t%s\t%p\t%s", cur->ident, c, (char*)&buff);
                     fflush(stdout);
                 }else{
-                    printf("d\t%s\t%i\n", cur->ident, c);
+                    printf("d\t%s\t%p\n", cur->ident, c);
                     fflush(stdout);
                 }
             }
@@ -225,8 +225,8 @@ int main(int argc, char ** argv){
                     if(cur==0){
                         fprintf(stdout,"\a667\tno such channel.\n");
                         continue;
-                    }else{
-                        char * rest=strtok_r(0, "", &saveptr);;
+                    } else {
+                        strtok_r(0, "", &saveptr);;
                         if(chan_s[0]=='*'){
                             fprintf(stdout,"\a668\tcant disconnect all (yet).\n");
 			    continue;
