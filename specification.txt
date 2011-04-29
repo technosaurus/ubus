@@ -1,6 +1,11 @@
-UBUS SPECIFICATION DRAFT
+The Unix Stream Bus
 
-   The Unix Stream Bus
+Antidesktop.org standards group. Standard Nr. 2
+DRAFT  29/4/2011
+
+0. References
+
+   [ADO RMI] http://antidesktop.org/std/ado-1-rsi.txt
 
 1. Motivation
 
@@ -22,9 +27,9 @@ UBUS SPECIFICATION DRAFT
 
    A bus is a unix domain socket (AF_UNIX and SOCK_STREAM)
    located in:
-          /var/ipc/application_name/
+          /var/ubus/application_name/
    or
-          ~/.ipc/application_name/
+          ~/.ubus/application_name/
 
    depending on, if the owner is a system or session service.
 
@@ -42,7 +47,7 @@ UBUS SPECIFICATION DRAFT
 4. Connections
 
    A connection is a bidirectional pipe established with a bus.
-   An application may establish a connection with a bus, by 
+   An application may establish a connection with a bus, by
    simply connecting to the file via connect (3).
 
 5. Communication types
@@ -79,86 +84,21 @@ UBUS SPECIFICATION DRAFT
 
     5.4  Restful bus
         
-      A client first sends a request,  then closes the write 
+      A client first sends a request,  then closes the write
       channel. The service sends a response, and closes the
-      read channel. Both request and response may be empty.
+      read channel. Both request and response may be
+      arbitrary binary code or even empty.
       Error handling must be implemented at application
       level.
 
-      Rest buses carry the file ending ".rest". 
+      Rest buses carry the file ending ".rest".
 
 
-6 RMI Format
+6 Call Format
 
-   6.1 Call
-
-      A call consists of multiple arguments separated 
-      by tab (ascii 9) and terminated by newline (ascii 10).
-
-      A call contains zero or more arguments.
-      Implementations MUST at least support a call size
-      (line including \n) of 256000 Bytes. (250Kb).
-      They SHOULD support unlimited size. Exceeding the 
-      implementation limit SHOULD result in an immediate 
-      disconnect, but at least MUST be responded with 
-      an error 75 ( EOVERFLOW )
-
-   6.2 Argument
-
-      An argument is a utf8 string.
-      Numbers are printed and parsed as they would in
-      printf (3).
-
-      Control characters in arguments are encoded.
-      0 (null) -->   \e0  ( 27 followed by 48 )
-      7 (bell) -->  \ea  (  27  followed by 97 )
-      8 (backspace) --> \eb
-      9 (tab) --> \et
-      10 (newline) --> \en
-      11 (vtab)    --> \ev
-      12 (formfeed) --> \ef
-      13 (return)  --> \er
-      27 (escape)  --> \ee
-      
-      Complex types are formed with \e{ \e} \e[ \e] \v and can 
-      be  nested infinitely deep. All elements MUST end in \v, 
-      including {} [].  \v and \e here are literal ascii 12 
-      and 27. Implementations should simply split by \v and 
-      use { } [] as indication for nesting.
-
-      Associative Array:  
-          Elements MUST be formed of key\vvalue\v, 
-          where key MUST NOT be empty.
-          \e{\va\vfoo\vb\vbar\vs\vbaz\vg\v\e{\va\v1\vc\vbla\v\e}\v\e}\v
-
-          for readability, \v is shown as space here:
-          \e{ a  foo  b  bar  s  baz  g  \e{ a  1 c  bla \e} \e}
-
-          for clarity, here the same thing in json notation:
-          { a:foo, b:bar, s:baz,  g : { a:1 , c:bla } }
-
-      Indexed Array:  
-          \e[\vb\v\e[\vfoo\vbar\v\e]\vbla\vbaz\v\e]\v
-
-          readable:
-          \e[ b \e[ foo bar \e]  bla baz \e]
-
-          same array in json:
-          [ b, [ foo bar ] , bla, baz]
-
-      Binary data SHOULD be sent the same way as strings.
-
-   6.3 Error handling
-
-      Errors can be indicated by sending a bell (ascii 7)
-      then an error number, then optionally tab followed by
-      a message, then newline.
-      The error number SHOULD be a posix errno. If it is not,
-      it MUST NOT clash with a posix errno.
-
-      Other control characters are reserved for future use.
-      Lines beginning with such a character, MUST be ignored.
-
+   The format of signals, methods, and properties shall
+   be [ADO RMI] as defined by the antidesktop.org
+   standards group ADO STD Nr 1.
 
 7. Bus discovery and recovery
 
@@ -173,15 +113,19 @@ UBUS SPECIFICATION DRAFT
 
 8. Security
 
-   Standard unix file permissions are used to prevent access 
-   from unauthorized users. Access rights SHOULD NOT change. 
-   Implementations MUST fail immediately to connect to a socket 
-   without required permissions ( as opposed to trying until 
+   Standard unix file permissions are used to prevent discoery
+   from unauthorized users. Access rights SHOULD NOT change
+   during operation.
+   Service implementations MUST be prepared to handle connections
+   from unauthorized users, as some Operating systems ignore
+   permissions on named pipes.
+   Client implementations MUST fail immediately to connect to a
+   socket without required permissions (as opposed to trying until
    success )
 
 9. Scripting interface
 
-   Binaries are provided that help in scripting and remoting.   
+   Binaries are provided that help in scripting and remoting.
 
    If a path to a bus does not begin with "/" or "./" , 
    it is relative to ~/.ipc/.
