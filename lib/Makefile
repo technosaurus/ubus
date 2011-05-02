@@ -27,7 +27,7 @@ libubus.a: ${OBJ}
 
 libubus.so: ${OBJ}
 	@echo CC -shared -o libubus.so
-	${CC} -shared ${OBJ} -o libubus.so ${LIBLDFLAGS}
+	@${CC} -shared ${OBJ} -o libubus.so ${LIBLDFLAGS}
 	@chmod 755 libubus.so
 
 clean: 
