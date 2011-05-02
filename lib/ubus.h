@@ -1,3 +1,7 @@
+
+#ifndef __UBUS_H__
+#define __UBUS_H__
+
 #ifndef NO_SELECT
 #include <sys/select.h>
 #endif
@@ -42,3 +46,6 @@ int           ubus_write      (ubus_chan_t *, const void *buff, int len);
 int           ubus_read       (ubus_chan_t *, void *buff, int len);
 void          ubus_close      (ubus_chan_t *);
 void          ubus_disconnect (ubus_chan_t *);
+
+#endif
+

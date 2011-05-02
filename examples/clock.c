@@ -36,7 +36,7 @@ int main(int argc, char ** argv){
         ubus_activate_all(service, &rfds, UBUS_IGNORE_INBOUND);
 
         ubus_chan_t *chan=0;
-        while (chan = ubus_fresh_chan(service)) {
+        while ((chan = ubus_fresh_chan(service))) {
             ubus_write(chan, &buff, len);
         }
         FILE *f = popen("date +%H:%M","r");

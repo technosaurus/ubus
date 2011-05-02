@@ -3,36 +3,43 @@
 
 include config.mk
 
-BINS=ubus ubus-connect ubus-signal
-EXAMPLES=examples/echo examples/clock
+TARGETS = lib cli examples
 
-all: .obj cli examples
+all: options
+	@echo building ${TARGETS}
+	@for i in ${TARGETS}; \
+	do \
+		cd $$i; \
+		make; \
+		cd ..; \
+	done
 
-examples: $(EXAMPLES)
-examples/%: examples/%.c libubus.a
-	$(CC) -static -Ilib $(LDLAGS) $< ./libubus.a -o $@
+clean:
+	@echo cleaning ${TARGETS}
+	@for i in ${TARGETS}; \
+	do \
+		cd $$i; \
+		make clean; \
+		cd ..; \
+	done
 
-cli: $(BINS)
-%: .obj/%.o libubus.a
-	$(CC) $(CFLAGS) -static  $(LDLAGS) $< libubus.a -o $@
-.obj/%.o: cli/%.c
-	$(CC) $(CFLAGS) -static -I./lib/ $(CFLAGS) -c $< -o $@
-libubus.a: .obj/libubus.o
-	$(AR) rcs libubus.a .obj/libubus.o
-.obj/libubus.o: lib/ubus.c lib/ubus.h lib/util.c
-	$(CC) $(CFLAGS) -c lib/ubus.c -o .obj/libubus.o
+install:
+	@echo installing lib and cli files
+	@for i in lib cli; \
+	do \
+		cd $$i; \
+		make install; \
+		cd ..; \
+	done
 
-.obj:
-	mkdir .obj
+uninstall:
+	@echo uninstalling lib and cli files
+	@for i in lib cli; \
+	do \
+		cd $$i; \
+		make uninstall; \
+		cd ..; \
+	done
 
-clean: 
-	rm -rf .obj
-	rm -f ubus libubus.a
-	rm -f $(BINS) $(EXAMPLES)
-install: $(BINS)
-	cp libubus.a ${PREFIX}/lib/
-	cp lib/ubus.h ${PREFIX}/include/
-	mkdir .tmp
-	cp $(BINS) .tmp/
-	mv .tmp/*  ${PREFIX}/bin/
-	rm -rf .tmp
+.PHONY: all options clean dist install uninstall
+

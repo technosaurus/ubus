@@ -24,7 +24,7 @@ int main(int argc, char ** argv){
         }
         ubus_activate_all(service,&rfds,0);
         ubus_chan_t * chan=0;
-        while(chan=ubus_ready_chan(service)){
+        while((chan=ubus_ready_chan(service))){
             char buff [200];
             int len=ubus_read(chan,&buff,200);
             if(len<1){
