@@ -17,7 +17,7 @@ options:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
-${BINS}: ${BINS:=.o} 
+${BINS}: % : %.o
 	@echo CC -o $@
 	@${CC} -o $@ $< ${LDFLAGS}
 
