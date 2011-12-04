@@ -188,7 +188,7 @@ int ubus_chan_fd (ubus_chan_t *s){
     return (chan->inotify)? chan->inotify : chan->fd;
 }
 
-static char do_connect(ubus_channel *chan) {
+static int do_connect(ubus_channel *chan) {
     int len;
 
     if ((chan->fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
@@ -212,12 +212,16 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
     struct stat st;
     char *tmp, buff[2000];
 
+
     if (chan->status == UBUS_INIT) {
-        if (stat(chan->remote.sun_path,&st)>-1 && !do_connect(chan)) {
+        //TODO: exists should stat the entire path.
+        //      sometimes the stat failes because we cant read a dir
+        int exists = (stat(chan->remote.sun_path,&st) > -1);
+        if (exists && !do_connect(chan)) {
             if (chan->inotify)
                 close(chan->inotify);
             chan->inotify = 0;
-        } else {
+        } else if (!exists) {
             chan->inotify = inotify_init();
             fcntl(chan->inotify, F_SETFL, fcntl(chan->inotify, F_GETFL) | O_NONBLOCK);
             tmp = malloc(strlen(chan->remote.sun_path));
@@ -226,13 +230,16 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
                 chan->status = UBUS_ERROR;
             free(tmp);
             chan->status = UBUS_LURKING;
+        } else {
+            chan->status = UBUS_ERROR;
         }
     } else if(chan->status == UBUS_LURKING) {
+        int exists = (stat(chan->remote.sun_path,&st) > -1);
         read(chan->inotify, &buff, 2000);
-        if (stat(chan->remote.sun_path,&st) >- 1) {
+        if (exists) {
             if (!do_connect(chan)) {
                 close(chan->inotify);
-                chan->inotify=0;
+                chan->inotify = 0;
             } else {
                 /*
                    FIXME
@@ -241,12 +248,9 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
                    this should be solved with flock
                    */
                 usleep(100);
-                if (!do_connect(chan)){
-                    close(chan->inotify);
-                    chan->inotify = 0;
-                } else {
-                    chan->status = UBUS_LURKING;
-                }
+                close(chan->inotify);
+                chan->inotify = 0;
+                do_connect(chan);
             }
         }
     } else if(chan->status == UBUS_CONNECTED)
