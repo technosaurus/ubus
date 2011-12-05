@@ -240,6 +240,7 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
             if (chan->inotify)
                 close(chan->inotify);
             chan->inotify = 0;
+        /*
         } else if (!exists) {
             chan->inotify = inotify_init();
             fcntl(chan->inotify, F_SETFL, fcntl(chan->inotify, F_GETFL) | O_NONBLOCK);
@@ -249,6 +250,7 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
                 chan->status = UBUS_ERROR;
             free(tmp);
             chan->status = UBUS_LURKING;
+        */
         } else {
             chan->status = UBUS_ERROR;
         }

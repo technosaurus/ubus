@@ -5,21 +5,21 @@ include ../config.mk
 
 EXAMPLES = echo clock
 
-all: options ${EXAMPLES}
+all: options ${EXAMPLES} ../lib/libubus.so
 
 options:
-	@echo ubus build options
-	@echo "CFLAGS   = ${CFLAGS}"
-	@echo "LDFLAGS  = ${LDFLAGS}"
-	@echo "CC       = ${CC}"
+	@echo ubus examples build options
+	@echo "  CFLAGS   = ${CFLAGS}"
+	@echo "  LDFLAGS  = ${LDFLAGS} -lubus"
+	@echo "  CC       = ${CC}"
 
 .c.o:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
 ${EXAMPLES}: ${EXAMPLES:=.o}
-	@echo CC -o $@
-	@${CC} -o $@ $< ${LDFLAGS}
+	@echo LD  $@
+	@${CC} -o $@ $< ${LDFLAGS} -lubus
 
 clean: 
 	@echo cleaning

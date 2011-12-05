@@ -5,21 +5,21 @@ include ../config.mk
 
 BINS = ubus ubus-connect ubus-signal ubus-invoke
 
-all: options ${BINS} 
+all: options ${BINS} ../lib/libubus.so
 
 options:
 	@echo ubus cli build options
-	@echo "CFLAGS   = ${CFLAGS}"
-	@echo "LDFLAGS  = ${LDFLAGS}"
-	@echo "CC       = ${CC}"
+	@echo "  CFLAGS   = ${CFLAGS}"
+	@echo "  LDFLAGS  = ${LDFLAGS} -lubus"
+	@echo "  CC       = ${CC}"
 
 .c.o:
 	@echo CC $<
 	@${CC} -c ${CFLAGS} $<
 
 ${BINS}: % : %.o
-	@echo CC -o $@
-	@${CC} -o $@ $< ${LDFLAGS}
+	@echo LD $@
+	@${CC} -o $@ $< ${LDFLAGS} -lubus
 
 clean: 
 	@echo cleaning

@@ -12,9 +12,9 @@ all: options ${ULIBS}
 
 options:
 	@echo ubus build options
-	@echo "CFLAGS   = ${CFLAGS}"
-	@echo "LDFLAGS  = ${LDFLAGS}"
-	@echo "CC       = ${CC}"
+	@echo "  CFLAGS   = ${CFLAGS}"
+	@echo "  LDFLAGS  = ${LDFLAGS}"
+	@echo "  CC       = ${CC}"
 
 .c.o:
 	@echo CC $<
@@ -26,7 +26,7 @@ libubus.a: ${OBJ}
 	@chmod 755 libubus.a
 
 libubus.so: ${OBJ}
-	@echo CC -shared -o libubus.so
+	@echo LD libubus.so
 	@${CC} -shared ${OBJ} -o libubus.so ${LIBLDFLAGS}
 	@chmod 755 libubus.so
 
