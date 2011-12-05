@@ -10,7 +10,7 @@
 
 int main(int argc, char ** argv){
     if(argc<2){
-        fprintf(stderr,"usage: ubus-signal /path/to/echo.method\n");
+        fprintf(stderr,"usage: ubus-connect /path/to/echo.method\n");
         exit(1);
     }
     char * path=resolved_bus_path(argv[1]);

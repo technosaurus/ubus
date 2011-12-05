@@ -3,7 +3,7 @@
 
 include ../config.mk
 
-BINS = ubus ubus-connect ubus-signal
+BINS = ubus ubus-connect ubus-signal ubus-invoke
 
 all: options ${BINS} 
 

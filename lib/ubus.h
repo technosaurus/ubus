@@ -10,13 +10,13 @@ typedef void ubus_t;
 typedef void ubus_chan_t;
 
 typedef enum{
-    UBUS_INIT,
-    UBUS_ERROR,
-    UBUS_LURKING,
-    UBUS_CONNECTED,
-    UBUS_READY,
-    UBUS_EOF,
-    UBUS_ACCEPTING
+    UBUS_INIT      = 1,
+    UBUS_ERROR     = 2,
+    UBUS_LURKING   = 3,
+    UBUS_CONNECTED = 4,
+    UBUS_READY     = 5,
+    UBUS_EOF       = 6,
+    UBUS_ACCEPTING = 7
 }  UBUS_STATUS;
 
 typedef enum{

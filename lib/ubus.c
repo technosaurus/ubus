@@ -168,7 +168,7 @@ void ubus_activate_all (ubus_t *s, fd_set *fds, int flags) {
                     ubus_disconnect(e2);
                     continue;
                 }
-            } else {
+            } else if (e->status == UBUS_READY) {
                 e->activated = 1;
             }
         }
@@ -272,10 +272,11 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
                 do_connect(chan);
             }
         }
-    } else if(chan->status == UBUS_CONNECTED)
-        return UBUS_READY;
+    } else if(chan->status == UBUS_CONNECTED) {
+        chan->status = UBUS_READY;
+    }
 
-    fprintf(stderr,"s_%i\n", chan->status);
+    fprintf(stderr,"libubus: s_%i\n", chan->status);
     return chan->status;
 }
 
