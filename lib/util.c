@@ -43,7 +43,9 @@ out:
 
 int mksocketpath(const char *s) {
     char *tmp = strdup(s);
-    int r = mkpath(dirname(tmp), S_IRWXU|S_IRWXG);
+    char *tmpt = tmp;
+    tmpt = dirname(tmpt);
+    int r = mkpath(tmpt, S_IRWXU|S_IRWXG);
     free(tmp);
 
     return r;

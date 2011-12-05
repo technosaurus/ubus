@@ -16,8 +16,14 @@
 #include "ubus.h"
 #include "ubus-util.h"
 
+
+void *my_alloc(size_t size) {
+    return calloc(1, size);
+}
+
+
 ubus_t * ubus_create (const char *uri) {
-    ubus_service *service = (ubus_service *)malloc(sizeof(ubus_service));
+    ubus_service *service = (ubus_service *)my_alloc(sizeof(ubus_service));
 
     service->chanlist = NULL;
     if (mksocketpath(uri))
@@ -49,7 +55,7 @@ int ubus_fd (ubus_t *s) {
 
 ubus_t *ubus_accept (ubus_t *s) {
     ubus_service *server = (ubus_service *)(s);
-    ubus_channel *chan = malloc(sizeof(ubus_channel));
+    ubus_channel *chan = my_alloc(sizeof(ubus_channel));
     unsigned int t;
 
     chan->status = UBUS_CONNECTED;
@@ -144,18 +150,29 @@ void ubus_activate_all (ubus_t *s, fd_set *fds, int flags) {
     ubus_service *server = (ubus_service*)(s);
     ubus_channel *e;
 
-    for (e = server->chanlist; e; e = e->next) {
+    for (e = server->chanlist; e;) {
         if (FD_ISSET(ubus_chan_fd(e), fds)) {
             ubus_activate(e);
             if (flags & UBUS_IGNORE_INBOUND) {
                 static char ignored_buff[1000];
-                if (ubus_read(e, &ignored_buff, 1000) < 1) {
-                    ubus_disconnect(e);
+                int ret = ubus_read(e, &ignored_buff, 1000);
+                if (ret < 1) {
+                    if (ret < 0 && errno == EAGAIN) {
+                        // fd was set for no reason :(
+                        e = e->next;
+                        continue;
+                    }
+
+                    ubus_channel *e2 = e;
+                    e = e->next;
+                    ubus_disconnect(e2);
+                    continue;
                 }
             } else {
                 e->activated = 1;
             }
         }
+        e = e->next;
     }
     if (FD_ISSET(ubus_fd(server), fds)) {
         ubus_accept(server);
@@ -165,7 +182,7 @@ void ubus_activate_all (ubus_t *s, fd_set *fds, int flags) {
 
 //chan api
 ubus_chan_t *ubus_connect (const char *uri) {
-    ubus_channel* chan = malloc(sizeof(ubus_channel));
+    ubus_channel* chan = my_alloc(sizeof(ubus_channel));
 
     if (chan == NULL)
         return NULL;
@@ -226,7 +243,7 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
         } else if (!exists) {
             chan->inotify = inotify_init();
             fcntl(chan->inotify, F_SETFL, fcntl(chan->inotify, F_GETFL) | O_NONBLOCK);
-            tmp = malloc(strlen(chan->remote.sun_path));
+            tmp = my_alloc(strlen(chan->remote.sun_path));
             strcpy(tmp, chan->remote.sun_path);
             if (inotify_add_watch(chan->inotify, dirname(tmp), IN_CREATE) < 0)
                 chan->status = UBUS_ERROR;
