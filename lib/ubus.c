@@ -24,6 +24,7 @@ ubus_t * ubus_create (const char *uri) {
         return NULL;
     if ((service->fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
         return NULL;
+    fcntl(service->fd, F_SETFD, fcntl(service->fd, F_GETFD) | FD_CLOEXEC);
 
     service->local.sun_family = AF_UNIX;
     strcpy(service->local.sun_path, uri);
@@ -64,6 +65,7 @@ ubus_t *ubus_accept (ubus_t *s) {
         free(chan);
         return NULL;
     } else {
+        fcntl(chan->fd, F_SETFD, fcntl(chan->fd, F_GETFD) | FD_CLOEXEC);
         fcntl(chan->fd, F_SETFL, fcntl(chan->fd, F_GETFL) | O_NONBLOCK);
         ubus_client_add(server, chan);
     }

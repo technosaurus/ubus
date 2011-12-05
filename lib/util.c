@@ -42,14 +42,8 @@ out:
 }
 
 int mksocketpath(const char *s) {
-    char *tmp = malloc(strlen(s));
-    int r;
-
-    if (tmp == NULL)
-        return 1;
-
-    strcpy(tmp,s);
-    r = mkpath(dirname(tmp), S_IRWXU|S_IRWXG);
+    char *tmp = strdup(s);
+    int r = mkpath(dirname(tmp), S_IRWXU|S_IRWXG);
     free(tmp);
 
     return r;
