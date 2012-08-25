@@ -3,8 +3,13 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "ubus.h"
+#include <signal.h>
 
 int main(int argc, char ** argv){
+
+    signal(SIGPIPE, SIG_IGN);
+
+
     if(argc<2){
         fprintf(stderr,"usage: echo /path/to/echo.method\n");
         exit(1);
