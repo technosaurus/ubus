@@ -3,7 +3,7 @@
 
 include ../config.mk
 
-EXAMPLES = echo clock
+EXAMPLES = echo clock relay
 
 all: options ${EXAMPLES} ../lib/libubus.so
 
@@ -14,16 +14,13 @@ options:
 	@echo "  CC       = ${CC}"
 
 .c.o:
-	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+	${CC} -c ${CFLAGS} $<
 
 ${EXAMPLES}: ${EXAMPLES:=.o}
-	@echo LD  $@
-	@${CC} -o $@ $< ${LDFLAGS} -lubus
+	${CC} -o $@ ${@:=.o} ${LDFLAGS} -lubus
 
 clean: 
-	@echo cleaning
-	@rm -f *.o *.a ${BINS} ${EXAMPLES}
+	rm -f *.o *.a ${BINS} ${EXAMPLES}
 
 .PHONY: all options clean
 
