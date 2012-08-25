@@ -278,7 +278,8 @@ UBUS_STATUS ubus_activate (ubus_chan_t *s) {
         chan->status = UBUS_READY;
     }
 
-    fprintf(stderr,"libubus: s_%i\n", chan->status);
+    if (getenv("UBUS_DEBUG"))
+        fprintf(stderr,"libubus: s_%i\n", chan->status);
     return chan->status;
 }
 

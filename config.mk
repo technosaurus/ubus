@@ -4,7 +4,7 @@ VERSION = 0.5
 # Customize below to fit your system
 
 # paths
-PREFIX ?= /usr/local/
+PREFIX ?= /usr/
 MANPREFIX = ${PREFIX}/share/man
 
 # includes and libs

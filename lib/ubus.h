@@ -9,7 +9,8 @@
 typedef void ubus_t;
 typedef void ubus_chan_t;
 
-typedef enum{
+typedef enum
+{
     UBUS_INIT      = 1,
     UBUS_ERROR     = 2,
     UBUS_LURKING   = 3,
@@ -19,7 +20,8 @@ typedef enum{
     UBUS_ACCEPTING = 7
 }  UBUS_STATUS;
 
-typedef enum{
+typedef enum
+{
     UBUS_NO_ACTIVATE_FLAGS = 0,
     UBUS_IGNORE_INBOUND    = 1,
 } UBUS_ACTIVATE_FLAGS;
