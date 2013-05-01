@@ -4,10 +4,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ubus.h"
+#include <signal.h>
 
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
 
 int main(int argc, char ** argv){
+
+    signal(SIGPIPE, SIG_IGN);
+
     if (argc<2) {
         fprintf(stderr, "usage: clock /path/to/clock.signal\n");
         exit(1);

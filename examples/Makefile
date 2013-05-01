@@ -3,7 +3,7 @@
 
 include ../config.mk
 
-EXAMPLES = echo clock relay
+EXAMPLES = echo clock
 
 all: options ${EXAMPLES} ../lib/libubus.a
 

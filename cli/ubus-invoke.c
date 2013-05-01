@@ -7,13 +7,57 @@
 #include <unistd.h>
 #include "ubus.h"
 #include "tools.h"
+#include <signal.h>
+
+
+void timeout(int sig) {
+    fprintf(stderr, "timed out\n");
+    exit (142);
+}
 
 int main(int argc, char ** argv) {
-    if (argc < 2) {
-        fprintf(stderr,"usage: ubus-invoke /path/to/echo.method <arguments> \n");
+
+    signal(SIGALRM, timeout);
+
+    int ok = 1;
+    long int waitAnswers = 0;
+    long int waitSeconds = 0;
+    char * path = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (argv[i][1] == 'a') {
+                errno = 0;
+                waitAnswers =  strtol(argv[i] + 2, 0, 10);
+                if (errno != 0 || waitAnswers == 0) {
+                    waitAnswers = 1;
+                }
+            } else if (argv[i][1] == 't') {
+                errno = 0;
+                waitSeconds =  strtol(argv[i] + 2, 0, 10);
+                if (errno != 0) {
+                    ok = 0;
+                    break;
+                }
+            } else {
+                ok = 0;
+            }
+        } else if (path == 0) {
+            path = resolved_bus_path(argv[i]);
+            argv = argv + i - 1;
+            argc = argc - i + 1;
+            break;
+        }
+    }
+
+    if (!path || !ok) {
+        fprintf(stderr,"\nusage: ubus-invoke [OPTIONS] /path/to/echo.method <arguments> \n"
+                "       -a[N] wait for N answers (default 0. -a without number means 1)\n"
+                "       -tN   wait at most N seconds for entire invocation to complete (default infinite) \n");
         exit(1);
     }
-    char * path = resolved_bus_path(argv[1]);
+
+
     ubus_chan_t *chan = ubus_connect(path);
     if (chan == 0) {
         perror("ubus_connect");
@@ -30,6 +74,9 @@ int main(int argc, char ** argv) {
         ready = 1;
 
     fd_set rfds;
+
+
+    alarm(waitSeconds);
     for (;;) {
         if (ready && !sent) {
             sent = 1;
@@ -50,6 +97,10 @@ int main(int argc, char ** argv) {
             if (ubus_write(chan, msg, strlen(msg)) < 0) {
                 perror("send");
                 exit(errno);
+            }
+
+            if (waitAnswers < 1) {
+                exit (0);
             }
         }
 
@@ -73,9 +124,11 @@ int main(int argc, char ** argv) {
                 }
                 write(1, &buff, n);
 
-                // by ADO spec 2, we only expect one return message
+                // by ADO spec 2, \n is the end of an answer
                 if (strchr(buff, '\n')) {
-                    exit (0);
+                    if (--waitAnswers < 1) {
+                        exit (0);
+                    }
                 }
             } else if (st == UBUS_ERROR){
                 perror("ubus_activate");
