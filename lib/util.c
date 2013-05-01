@@ -10,6 +10,7 @@
 #include "ubus.h"
 #include "ubus-util.h"
 
+
 int mkpath(const char *s, mode_t mode){
     char *q = NULL, *r = NULL, *path = NULL, *up = NULL;
     int rv;
@@ -51,6 +52,8 @@ int mksocketpath(const char *s) {
     return r;
 }
 
+// #define DEBUG_LINKED_LIST 1
+
 ubus_channel *ubus_client_add(ubus_service *service, ubus_channel *c) {
     ubus_channel *cur;
 
@@ -75,18 +78,47 @@ ubus_channel *ubus_client_add(ubus_service *service, ubus_channel *c) {
 ubus_channel *ubus_client_del(ubus_service *service, ubus_channel *c) {
     ubus_channel *n;
 
+    if (c == 0)
+        return NULL;
+
+#if DEBUG_LINKED_LIST
+    fprintf(stderr, "pre (deleting %p) \n", c);
+    for (ubus_channel *e = service->chanlist; e; e =  e->next) {
+        fprintf(stderr, "  %p\n", e);
+    }
+#endif
+
     if (service != c->service)
         return NULL;
 
-    n = c->next;
-    if (c->prev == NULL){
-        if (c != service->chanlist)
+    ubus_channel *prev = c->prev;
+    ubus_channel *next = c->next;
+
+    if (prev)
+        prev->next = next;
+
+    if (next)
+        next->prev = prev;
+
+    if (!prev) {
+        if (c != service->chanlist) {
+            fprintf(stderr, "loose element in chanlist  %p\n", c);
             return NULL;
-        service->chanlist = 0;
-    } else
-        c->prev->next = c->next;
+        }
+        service->chanlist = next;
+    }
+
     c->service = 0;
     ubus_disconnect(c);
+
+
+#if DEBUG_LINKED_LIST
+    fprintf(stderr, "post\n");
+    for (ubus_channel *e = service->chanlist; e; e =  e->next) {
+        fprintf(stderr, "  %p\n", e);
+    }
+#endif
+
 
     return n;
 }
