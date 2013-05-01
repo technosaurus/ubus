@@ -92,10 +92,17 @@ void ubus_destroy (ubus_t *s) {
 
 //high level bus api
 int ubus_broadcast  (ubus_t *s, const void *buff, int len) {
+    return ubus_broadcast_without(s, buff, len, 0);
+}
+
+int ubus_broadcast_without  (ubus_t *s, const void *buff, int len, ubus_chan_t *exclude) {
     ubus_channel *e;
 
-    for (e = ((ubus_service *)s)->chanlist; e; e = e->next)
-        ubus_write(e, buff, len);
+    for (e = ((ubus_service *)s)->chanlist; e; e = e->next) {
+        if (e != exclude) {
+            ubus_write(e, buff, len);
+        }
+    }
 
     return len;
 }

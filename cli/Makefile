@@ -3,9 +3,9 @@
 
 include ../config.mk
 
-BINS = ubus ubus-connect ubus-signal ubus-invoke
+BINS = ubus ubus-connect ubus-signal ubus-invoke ubus-relay
 
-all: options ${BINS} ../lib/libubus.so
+all: options ${BINS} ../lib/libubus.a
 
 options:
 	@echo ubus cli build options

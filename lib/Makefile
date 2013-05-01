@@ -3,7 +3,7 @@
 
 include ../config.mk
 
-ULIBS = libubus.a libubus.so
+ULIBS = libubus.a
 
 SRC = ubus.c util.c
 OBJ = ${SRC:.c=.o}

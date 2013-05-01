@@ -5,7 +5,7 @@ include ../config.mk
 
 EXAMPLES = echo clock relay
 
-all: options ${EXAMPLES} ../lib/libubus.so
+all: options ${EXAMPLES} ../lib/libubus.a
 
 options:
 	@echo ubus examples build options

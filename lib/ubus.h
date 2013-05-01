@@ -32,6 +32,7 @@ ubus_chan_t * ubus_accept     (ubus_t *);
 void          ubus_destroy    (ubus_t *);
 
 int           ubus_broadcast  (ubus_t *, const void *buff, int len);
+int           ubus_broadcast_without  (ubus_t *, const void *buff, int len, ubus_chan_t *exclude);
 ubus_chan_t * ubus_ready_chan (ubus_t *);
 ubus_chan_t * ubus_fresh_chan (ubus_t *);
 
